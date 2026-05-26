@@ -1,0 +1,11 @@
+.DS_Store
+node_modules/
+functions/lib/
+app/flutter_app/.dart_tool/
+app/flutter_app/build/
+app/flutter_app/ios/Flutter/ephemeral/
+app/flutter_app/macos/Flutter/ephemeral/
+pi_agent/.venv/
+pi_agent/buffer/
+__pycache__/
+*.pyc

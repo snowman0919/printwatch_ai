@@ -1,0 +1,28 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null && request.auth.token.email.matches('.*@dimigo\\.hs\\.kr$');
+    }
+
+    function userDoc() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid));
+    }
+
+    function canReadPrinter(printerId) {
+      return signedIn() && (
+        userDoc().data.role == 'admin' ||
+        printerId in userDoc().data.allowedPrinters
+      );
+    }
+
+    match /printers/{printerId}/snapshots/{snapshotId}/{fileName} {
+      allow read: if canReadPrinter(printerId);
+      allow write: if false;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

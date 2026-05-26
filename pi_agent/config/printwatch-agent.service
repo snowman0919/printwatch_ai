@@ -1,0 +1,15 @@
+[Unit]
+Description=PrintWatch AI Raspberry Pi agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/printwatch_ai/pi_agent
+Environment=PRINTWATCH_DEVICE_SECRET=replace-with-systemd-drop-in-secret
+ExecStart=/opt/printwatch_ai/pi_agent/.venv/bin/python src/main.py --config CONFIG_PATH_PLACEHOLDER
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
