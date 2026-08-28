@@ -1,7 +1,8 @@
 [Unit]
 Description=PrintWatch camera and telemetry agent
-After=network-online.target
+After=network-online.target printwatch-firstboot.service
 Wants=network-online.target
+ConditionPathExists=/etc/printwatch-agent.env
 
 [Service]
 Type=simple

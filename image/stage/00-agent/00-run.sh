@@ -2,7 +2,7 @@
 
 install -d -m 0755 "${ROOTFS_DIR}/opt/printwatch-agent"
 cp -a files/agent/. "${ROOTFS_DIR}/opt/printwatch-agent/"
-install -m 0644 files/printwatch-agent.service "${ROOTFS_DIR}/etc/systemd/system/printwatch-agent.service"
+install -m 0644 files/agent/printwatch-agent.service "${ROOTFS_DIR}/etc/systemd/system/printwatch-agent.service"
 install -m 0644 files/printwatch-firstboot.service "${ROOTFS_DIR}/etc/systemd/system/printwatch-firstboot.service"
 install -m 0755 files/printwatch-firstboot "${ROOTFS_DIR}/usr/local/sbin/printwatch-firstboot"
 
