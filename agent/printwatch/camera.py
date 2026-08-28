@@ -1,9 +1,5 @@
-import asyncio
 import io
 import threading
-from fractions import Fraction
-from av import VideoFrame
-from aiortc import VideoStreamTrack
 from picamera2 import Picamera2
 
 
@@ -26,29 +22,12 @@ class Camera:
             self._camera.capture_file(stream, format="jpeg", name="main")
             return stream.getvalue()
 
-    def frame(self):
+    def live_frame(self) -> bytes:
         with self._lock:
-            return self._camera.capture_array("lores")
+            stream = io.BytesIO()
+            self._camera.capture_file(stream, format="jpeg", name="lores")
+            return stream.getvalue()
 
     def close(self) -> None:
         with self._lock:
             self._camera.stop()
-
-
-class CameraTrack(VideoStreamTrack):
-    kind = "video"
-
-    def __init__(self, camera: Camera, fps: float = 2.0) -> None:
-        super().__init__()
-        self.camera = camera
-        self.delay = 1.0 / fps
-        self.pts = 0
-
-    async def recv(self) -> VideoFrame:
-        await asyncio.sleep(self.delay)
-        array = await asyncio.to_thread(self.camera.frame)
-        frame = VideoFrame.from_ndarray(array, format="bgr24")
-        self.pts += round(90_000 * self.delay)
-        frame.pts = self.pts
-        frame.time_base = Fraction(1, 90_000)
-        return frame

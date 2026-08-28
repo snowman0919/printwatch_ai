@@ -10,8 +10,6 @@ REQUIRED = {
     "OLLAMA_BASE_URL",
     "OLLAMA_MODEL",
     "DEVICE_TOKENS_JSON",
-    "CLOUDFLARE_TURN_KEY_ID",
-    "CLOUDFLARE_TURN_API_TOKEN",
 }
 PRINTERS = {"printer-1", "printer-2", "printer-3"}
 

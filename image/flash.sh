@@ -28,7 +28,7 @@ else
 fi
 [[ -d "$mount_point" ]] || { echo "Could not mount boot partition" >&2; exit 1; }
 umask 077
-printf 'PRINTWATCH_SERVER_URL="https://3dp.kotori9.run"\nPRINTWATCH_PRINTER_ID="%s"\nPRINTWATCH_DEVICE_TOKEN="%s"\nPRINTWATCH_OLED_ADDRESS="0x3C"\nPRINTWATCH_SERIAL_DEVICE="auto"\n' "$printer_id" "$token" > "$mount_point/printwatch.env"
+printf 'PRINTWATCH_SERVER_URL="https://3dp.kotori9.run"\nPRINTWATCH_PRINTER_ID="%s"\nPRINTWATCH_DEVICE_TOKEN="%s"\nPRINTWATCH_LIVE_INTERVAL="1"\nPRINTWATCH_OLED_ADDRESS="0x3C"\nPRINTWATCH_SERIAL_DEVICE="auto"\n' "$printer_id" "$token" > "$mount_point/printwatch.env"
 sync
 if command -v diskutil >/dev/null; then diskutil unmountDisk "$device" >/dev/null; else udisksctl unmount -b "$boot_device" >/dev/null; fi
 echo "Ready: insert the card, connect camera/OLED/Ethernet, then power on."

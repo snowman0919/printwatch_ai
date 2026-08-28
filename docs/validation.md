@@ -5,8 +5,9 @@
 - A real multipart request traversed `POST /api/device/snapshot`, JPEG normalization, SQLite persistence, Qwythos analysis at `100.90.167.128:11434/v1`, schema adaptation, and dashboard readback.
 - The synthetic spaghetti fixture was classified `failed / spaghetti / 0.95`, and the dashboard derived `실패 감지` while the device heartbeat was fresh.
 - A fresh production-image regression check found that a 1440 × 900 PNG could exceed the 90-second inference boundary. The real route now keeps the stored snapshot intact but sends a 720px JPEG copy to Qwythos; an isolated production container completed the multipart route in 17 seconds with `analysisError=false` and returned `failed / spaghetti / 0.95`.
-- A browser offer traversed the user route, appeared in the authenticated device queue, accepted a device answer, and returned that answer only to the creating viewer.
+- A real device-token request uploaded three distinct frames through `POST /api/device/frame`; an invalid token returned 401, valid uploads returned 200, and only one normalized JPEG remained for the printer. An authenticated Aside browser read `NEAR LIVE · 1 FPS` and changed the displayed media URL on the next one-second poll after a new upload.
 - The exact school-domain predicate accepts `student@dimigo.hs.kr` and rejects both a subdomain and an attacker-controlled suffix.
+- Clerk production uses custom Google OAuth credentials with only the Clerk callback URI. Cloudflare Domain Connect created five DNS-only CNAME records; Clerk reports application 2/2 verified, email 3/3 verified, and both SSL certificates issued. The public sign-in page rendered the Google button through the Clerk custom domain.
 - A production Docker image built on `dev`; an isolated container returned `{"ok":true}` from `/api/health` with `/data` mounted as the unprivileged runtime user.
 - The Clerk publishable key crossed the Docker build boundary into the browser bundle while the secret remained runtime-only. Compose rejected a missing public key, and the environment preflight rejected placeholders and invalid three-device token sets without printing values. The deployed topology uses the existing host systemd tunnel connector, avoiding a second token-bearing container.
 
@@ -49,7 +50,7 @@ The pinned official `pi-gen` ARM64 path completed on the x86_64 `dev` host throu
 - Size: 783,675,540 bytes
 - SHA-256: `7b013bb3177fffa1c3a1cff9b192e0fbc6e2fc50cb622f8b3c1e882ea5c55ddb`
 
-Inside the built rootfs, the ARM64 Python runtime successfully imported `aiohttp`, `aiortc`, `av`, `luma.oled`, `serial`, and `picamera2`. Both `printwatch-firstboot.service` and `printwatch-agent.service` were enabled, the agent source was present, and `dtparam=i2c_arm=on` was set. This validates construction and runtime linkage; camera capture, OLED output, Ethernet boot, and printer serial telemetry still require a physical Pi 4 smoke test.
+Inside the built rootfs, the ARM64 Python runtime successfully imported `aiohttp`, `luma.oled`, `serial`, and `picamera2`. Both `printwatch-firstboot.service` and `printwatch-agent.service` were enabled, the agent source was present, and `dtparam=i2c_arm=on` was set. This validates construction and runtime linkage; camera capture, OLED output, Ethernet boot, and printer serial telemetry still require a physical Pi 4 smoke test.
 
 ### Printable housing
 

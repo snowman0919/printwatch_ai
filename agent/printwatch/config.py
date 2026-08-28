@@ -7,6 +7,7 @@ class Config:
     server_url: str
     printer_id: str
     device_token: str
+    live_interval: float
     snapshot_interval: float
     analysis_interval: float
     oled_address: int
@@ -21,10 +22,14 @@ class Config:
             raise ValueError("PRINTWATCH_PRINTER_ID must be printer-1, printer-2, or printer-3")
         if len(token) < 24:
             raise ValueError("PRINTWATCH_DEVICE_TOKEN must contain at least 24 characters")
+        live_interval = float(os.environ.get("PRINTWATCH_LIVE_INTERVAL", "1"))
+        if not 0.5 <= live_interval <= 10:
+            raise ValueError("PRINTWATCH_LIVE_INTERVAL must be between 0.5 and 10 seconds")
         return cls(
             server_url=os.environ.get("PRINTWATCH_SERVER_URL", "https://3dp.kotori9.run").rstrip("/"),
             printer_id=printer_id,
             device_token=token,
+            live_interval=live_interval,
             snapshot_interval=float(os.environ.get("PRINTWATCH_SNAPSHOT_INTERVAL", "15")),
             analysis_interval=float(os.environ.get("PRINTWATCH_ANALYSIS_INTERVAL", "60")),
             oled_address=int(os.environ.get("PRINTWATCH_OLED_ADDRESS", "0x3C"), 0),

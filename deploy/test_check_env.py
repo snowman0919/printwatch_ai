@@ -11,8 +11,6 @@ class CheckEnvTest(unittest.TestCase):
             "OLLAMA_BASE_URL": "http://100.90.167.128:11434/v1",
             "OLLAMA_MODEL": "Qwythos-v2-9B:Q4",
             "DEVICE_TOKENS_JSON": '{"printer-1":"aaaaaaaaaaaaaaaaaaaaaaaa","printer-2":"bbbbbbbbbbbbbbbbbbbbbbbb","printer-3":"cccccccccccccccccccccccc"}',
-            "CLOUDFLARE_TURN_KEY_ID": "turn-key",
-            "CLOUDFLARE_TURN_API_TOKEN": "turn-token",
         }
 
     def test_accepts_complete_environment(self):

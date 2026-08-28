@@ -1,6 +1,6 @@
 # PrintWatch AI
 
-세 대의 Ender-3 V3 SE를 읽기 전용으로 감시하는 시스템입니다. Raspberry Pi 4가 사진·WebRTC 영상·USB 직렬 텔레메트리를 전송하고, Next.js 서버가 Clerk 접근 제어와 Qwythos 비전 판정, 대시보드를 담당합니다.
+세 대의 Ender-3 V3 SE를 읽기 전용으로 감시하는 시스템입니다. Raspberry Pi 4가 AI 사진·1 FPS 준실시간 JPEG·USB 직렬 텔레메트리를 전송하고, Next.js 서버가 Clerk 접근 제어와 Qwythos 비전 판정, 대시보드를 담당합니다.
 
 ## 빠른 경로
 

@@ -15,7 +15,7 @@ async def run() -> None:
     oled.start()
     camera = Camera()
     telemetry = SerialTelemetry(config.serial_device, config.serial_baud)
-    api = ServerApi(config, camera)
+    api = ServerApi(config)
     stop = asyncio.Event()
     for name in (signal.SIGINT, signal.SIGTERM):
         asyncio.get_running_loop().add_signal_handler(name, stop.set)
@@ -40,19 +40,20 @@ async def run() -> None:
             except asyncio.TimeoutError:
                 pass
 
-    async def signaling() -> None:
+    async def live_uploader() -> None:
         while not stop.is_set():
+            started = time.monotonic()
             try:
-                await api.answer_pending()
+                await api.upload_live_frame(await asyncio.to_thread(camera.live_frame))
             except Exception as error:
-                logging.debug("signaling poll failed: %s", error)
+                logging.debug("live frame upload failed: %s", error)
             try:
-                await asyncio.wait_for(stop.wait(), timeout=2)
+                await asyncio.wait_for(stop.wait(), timeout=max(0.1, config.live_interval - (time.monotonic() - started)))
             except asyncio.TimeoutError:
                 pass
 
     try:
-        await asyncio.gather(uploader(), signaling())
+        await asyncio.gather(uploader(), live_uploader())
     finally:
         oled.close()
         await api.close()
