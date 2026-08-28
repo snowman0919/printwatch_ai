@@ -1,11 +1,14 @@
 import "server-only";
-import { readFile } from "node:fs/promises";
+import sharp from "sharp";
 import type { Analysis, Telemetry } from "./types";
 import { parseAnalysisContent } from "./analysis-format";
 
 export async function analyzePrint(input: { currentPath: string; previousPath?: string; telemetry: Telemetry }): Promise<Analysis> {
   const baseUrl = (process.env.OLLAMA_BASE_URL ?? "http://100.90.167.128:11434/v1").replace(/\/$/, "");
-  const images = await Promise.all([input.currentPath, input.previousPath].filter(Boolean).map(async (file) => `data:image/jpeg;base64,${(await readFile(file!)).toString("base64")}`));
+  const images = await Promise.all([input.currentPath, input.previousPath].filter(Boolean).map(async (file) => {
+    const image = await sharp(file!).rotate().resize({ width: 720, height: 720, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer();
+    return `data:image/jpeg;base64,${image.toString("base64")}`;
+  }));
   const prompt = [
     "You monitor a stock Ender-3 V3 SE. Compare the current image with the previous image when present.",
     "Decide only from visible evidence and the read-only printer telemetry. Be conservative.",
