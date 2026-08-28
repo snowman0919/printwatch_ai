@@ -1,6 +1,8 @@
 from dataclasses import dataclass, asdict
 from glob import glob
 import re
+import time
+from typing import Any
 
 
 @dataclass
@@ -44,6 +46,7 @@ class SerialTelemetry:
         self.device = device
         self.baud = baud
         self.was_printing = False
+        self._port: Any | None = None
 
     def _path(self) -> str | None:
         if self.device != "auto":
@@ -55,14 +58,27 @@ class SerialTelemetry:
         import serial
         path = self._path()
         if not path:
+            self.close()
             return Telemetry()
         try:
-            with serial.Serial(path, self.baud, timeout=1.0, write_timeout=1.0) as port:
-                port.reset_input_buffer()
-                port.write(b"M27\nM105\nM31\n")
-                text = port.read(4096).decode("utf-8", errors="replace")
+            if self._port is None or not self._port.is_open:
+                self._port = serial.Serial(path, self.baud, timeout=1.0, write_timeout=1.0)
+                time.sleep(1)
+            self._port.reset_input_buffer()
+            self._port.write(b"M27\nM105\nM31\n")
+            text = self._port.read(4096).decode("utf-8", errors="replace")
             result = parse_response(text, self.was_printing)
             self.was_printing = next_printing_latch(self.was_printing, result.printerState)
             return result
         except (OSError, serial.SerialException):
+            self.close()
             return Telemetry()
+
+    def close(self) -> None:
+        if self._port is not None:
+            try:
+                self._port.close()
+            except OSError:
+                pass
+            finally:
+                self._port = None

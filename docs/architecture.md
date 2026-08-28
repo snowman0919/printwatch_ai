@@ -9,7 +9,7 @@ Picamera2 ---------------------+--HTTPS JPEG frame every second----+--Clerk sess
 SSD1306 OLED <---local status--+
 ```
 
-`agent/printwatch/main.py`가 Pi 프로세스의 진입점입니다. `SerialTelemetry`는 `M27`, `M105`, `M31` 응답만 읽고, `Camera`는 Picamera2의 고해상도 AI 스냅샷과 640 × 480 준실시간 JPEG를 공유합니다. `ServerApi`는 장치별 bearer token으로 두 종류의 파일을 업로드합니다.
+`agent/printwatch/main.py`가 Pi 프로세스의 진입점입니다. `SerialTelemetry`는 `M27`, `M105`, `M31` 응답만 읽고 에이전트 수명 동안 직렬 포트 하나를 유지합니다. 분리나 I/O 오류가 있을 때만 닫고 다음 주기에 재연결하므로 [포트를 열 때 발생할 수 있는 RTS/DTR 전환](https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.Serial.open)을 매 폴링마다 반복하지 않습니다. `Camera`는 Picamera2의 고해상도 AI 스냅샷과 640 × 480 준실시간 JPEG를 공유합니다. `ServerApi`는 장치별 bearer token으로 두 종류의 파일을 업로드합니다.
 
 Next.js의 장치 경계는 `web/src/app/api/device`, 사용자 경계는 `web/src/app/api/app`입니다. 두 경로는 각각 장치 token과 Clerk 세션을 검증합니다. `auth.ts`는 유료 도메인 제한 기능에 의존하지 않고 모든 서버 사용자 경계에서 primary email이 `@dimigo.hs.kr`인지 다시 검사합니다. Clerk invite-only 설정은 신규 계정 생성 범위를 줄이는 1차 정책이고, 서버 검사는 우회 방지용 최종 정책입니다.
 

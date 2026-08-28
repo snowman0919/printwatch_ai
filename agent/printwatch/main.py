@@ -57,6 +57,7 @@ async def run() -> None:
     finally:
         oled.close()
         await api.close()
+        telemetry.close()
         camera.close()
 
 

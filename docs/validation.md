@@ -12,6 +12,7 @@
 - A production Docker image built on `dev`; an isolated container returned `{"ok":true}` from `/api/health` with `/data` mounted as the unprivileged runtime user.
 - The Clerk publishable key crossed the Docker build boundary into the browser bundle while the secret remained runtime-only. Compose rejected a missing public key, and the environment preflight rejected placeholders and invalid three-device token sets without printing values. The deployed topology uses the existing host systemd tunnel connector, avoiding a second token-bearing container.
 - The real production token set passed the URL-safe, unique three-device preflight without printing values. A simulated macOS flash traversed confirmation, writer invocation, boot mount, mode-0600 `printwatch.env` creation and unmount; a quote/newline token was rejected before the writer boundary.
+- A serial regression check performed two telemetry polls through one fake port open, then proved explicit shutdown closed it. This protects the hardware boundary from reopening the USB serial device every 15 seconds and repeatedly toggling RTS/DTR.
 
 ## StyleSeed code gate
 
