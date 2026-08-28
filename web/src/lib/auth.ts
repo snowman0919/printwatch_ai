@@ -1,12 +1,13 @@
 import "server-only";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { isSchoolEmail } from "./school-domain";
 
 export async function requireSchoolUser(options: { redirectOnFailure?: boolean } = {}) {
   if (process.env.NODE_ENV !== "production" && process.env.AUTH_TEST_MODE === "1") return { id: "local-reviewer", email: "reviewer@dimigo.hs.kr", name: "Local Reviewer" };
   const user = await currentUser();
   const email = user?.emailAddresses.find((entry) => entry.id === user.primaryEmailAddressId)?.emailAddress.toLowerCase();
-  if (!user || !email?.endsWith("@dimigo.hs.kr")) {
+  if (!user || !email || !isSchoolEmail(email)) {
     if (options.redirectOnFailure) redirect("/unauthorized");
     throw new Response("Forbidden", { status: 403 });
   }
