@@ -47,8 +47,8 @@ Local evidence paths (generated, not committed):
 The pinned official `pi-gen` ARM64 path completed on the x86_64 `dev` host through registered QEMU emulation. The resulting Raspberry Pi OS Trixie image passed `xz -t`:
 
 - Image: `image_2026-08-28-printwatch-pi4.img.xz`
-- Size: 783,675,540 bytes
-- SHA-256: `7b013bb3177fffa1c3a1cff9b192e0fbc6e2fc50cb622f8b3c1e882ea5c55ddb`
+- Size: 745,971,420 bytes
+- SHA-256: `16c7c6b3216ca21673a1d990a62612b0e6ad32c4ff52e5445eca83c9845e876c`
 
 Inside the built rootfs, the ARM64 Python runtime successfully imported `aiohttp`, `luma.oled`, `serial`, and `picamera2`. Both `printwatch-firstboot.service` and `printwatch-agent.service` were enabled, the agent source was present, and `dtparam=i2c_arm=on` was set. This validates construction and runtime linkage; camera capture, OLED output, Ethernet boot, and printer serial telemetry still require a physical Pi 4 smoke test.
 
