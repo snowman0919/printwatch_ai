@@ -1,8 +1,0 @@
-opencv-python
-numpy
-pillow
-pytesseract
-requests
-google-cloud-firestore
-aiortc
-av

@@ -9,3 +9,10 @@ pi_agent/.venv/
 pi_agent/buffer/
 __pycache__/
 *.pyc
+.DS_Store
+.env
+.image-work/
+**/__pycache__/
+*.pyc
+.playwright-cli/
+output/

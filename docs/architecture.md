@@ -1,34 +1,30 @@
 # Architecture
 
-PrintWatch AI has three runtime layers.
+## 실행 경로
 
-## Raspberry Pi Layer
+```text
+Ender-3 V3 SE --USB serial--> Raspberry Pi 4 --HTTPS snapshot/telemetry--> Next.js --OpenAI-compatible HTTP--> Ollama/Qwythos
+                               |                                    |
+Picamera2 ---------------------+--WebRTC video via Cloudflare TURN--+--Clerk session--> browser
+SSD1306 OLED <---local status--+
+```
 
-Each Raspberry Pi 3 owns exactly one Ender-3 V3 SE. The agent captures from Raspberry Pi Camera Module V1 at 1920x1080 every 5 minutes, writes a local original, creates thumbnail and AI-sized JPEGs, crops the LCD region, runs OCR, computes local image signals, and uploads through `uploadSnapshot`.
+`agent/printwatch/main.py`가 Pi 프로세스의 진입점입니다. `SerialTelemetry`는 `M27`, `M105`, `M31` 응답만 읽고, `Camera`는 Picamera2의 고해상도 스냅샷과 저해상도 영상 프레임을 공유합니다. `ServerApi`는 장치별 bearer token으로 업로드하고 브라우저가 만든 WebRTC offer에 답합니다.
 
-The Pi does not know the OpenAI API key and does not control the printer.
+Next.js의 장치 경계는 `web/src/app/api/device`, 사용자 경계는 `web/src/app/api/app`입니다. 두 경로는 각각 장치 token과 Clerk 세션을 검증합니다. `auth.ts`는 유료 도메인 제한 기능에 의존하지 않고 모든 서버 사용자 경계에서 primary email이 `@dimigo.hs.kr`인지 다시 검사합니다. Clerk invite-only 설정은 신규 계정 생성 범위를 줄이는 1차 정책이고, 서버 검사는 우회 방지용 최종 정책입니다.
 
-## Firebase Layer
+스냅샷 업로드는 JPEG·크기·텔레메트리 스키마를 검증하고 `sharp`로 정규화한 뒤 SQLite와 `/data`에 기록합니다. 각 프린터의 최근 480장만 유지합니다. 15초 주기 기준 약 2시간이며, 더 긴 이력이 필요해지면 이 숫자를 운영 요구에 맞게 바꾸면 됩니다.
 
-Firebase is the full backend:
+`analysis.ts`는 현재/이전 프레임과 텔레메트리를 Qwythos에 전달합니다. 단일 의심은 `suspected`, 같은 유형의 연속 의심 또는 0.85 이상의 실패 확률은 `failed`입니다. 텔레메트리 완료는 비전이 정상일 때 완료 근거가 됩니다. AI는 관찰 근거이며 자동 중지 권한이 없습니다.
 
-- Auth: Google sign-in, accepted domain `@dimigo.hs.kr`.
-- Firestore: live dashboard data, alerts, feedback, WebRTC signaling.
-- Storage: original, thumbnail, and AI images.
-- Functions: snapshot ingest, AI analysis, notifications, cleanup, offline status.
-- FCM: push notifications for suspected or critical failures.
+## 핵심 불변식
 
-## Flutter Layer
+- `printer-1`부터 `printer-3`까지의 token은 서로 달라야 합니다.
+- Clerk 로그인 여부만으로는 충분하지 않으며 서버에서 학교 도메인을 검사해야 합니다.
+- 라이브 영상은 Next.js를 통과하지 않습니다. 서버는 offer/answer와 짧은 TURN 자격 증명만 중계합니다.
+- Pi 이미지에는 공통 장치 token을 넣지 않습니다. `flash.sh`가 카드마다 고유 설정을 부팅 파티션에 기록하고 첫 부팅 때 root 전용 파일로 이동합니다.
+- 프린터 직렬 경로는 읽기 전용 질의로 제한됩니다.
 
-The Flutter app is view-only. It streams Firestore dashboard data, shows current and historical images, registers FCM tokens, writes feedback, and starts WebRTC viewer sessions. Printer cards are sorted by severity: failed, suspected, unknown, offline, normal.
+## 배포 경계
 
-## Data Flow
-
-1. Pi captures image and metadata.
-2. Pi signs upload with HMAC and calls `uploadSnapshot`.
-3. Function stores images in Storage and creates `snapshots/{snapshotId}`.
-4. `onSnapshotUploaded` updates `printers/{printerId}` and job progress.
-5. Suspicious local signals trigger immediate AI; otherwise `scheduledAiAnalysis` runs every 30 minutes.
-6. AI results are written to `aiAnalyses`; printer status and print job progress are updated.
-7. Alerts create FCM notifications with cooldown.
-8. Flutter receives Firestore updates in near real time.
+`compose.yaml`은 `web`과 `cloudflared` 두 컨테이너만 실행합니다. 외부 공개는 Cloudflare Tunnel이 `http://web:3000`으로 전달하며, 호스트 포트 3300은 loopback에만 열립니다. SQLite와 스냅샷은 Docker named volume에 남습니다. Ollama는 `dev`에서 Tailscale 주소 `100.90.167.128:11434`로 접근합니다.

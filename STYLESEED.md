@@ -1,0 +1,27 @@
+# StyleSeed — Design Lock
+<!-- Selections persist here. This file cannot waive StyleSeed core invariants. -->
+- App domain: education
+- Surface: desktop-web-app
+- Surface adapter: product-ui
+- Page type: dashboard
+- Output grammar: operations-console
+- Grammar path: built-in:engine/RULESETS.md
+- Grammar fallback: operations-console
+- Reference confidence: n/a
+- Brand recipe: enterprise-workbench
+- Palette recipe: cobalt-instrument
+- Palette character: balanced
+- Palette mode: dark
+- Palette harmony: auto
+- Surface temperature: cool
+- Aesthetic profile: technical
+- Skin: custom
+- Primary action: #175CD3
+- Font: Pretendard
+- Radius: crisp
+- Elevation: tonal layers and hairline boundaries; no decorative shadows
+- Density: comfortable
+- Motion: Snap restrained
+- Imagery/data role: live printer camera is primary evidence; AI status explains, never replaces it
+- Signature move: one dominant live evidence panel connects all three printer states to the alert queue
+- Locked: 2026-08-28
