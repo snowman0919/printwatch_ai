@@ -1,0 +1,11 @@
+[Unit]
+Description=Install PrintWatch per-device configuration
+Before=printwatch-agent.service
+ConditionPathExists=/boot/firmware/printwatch.env
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/printwatch-firstboot
+
+[Install]
+WantedBy=multi-user.target

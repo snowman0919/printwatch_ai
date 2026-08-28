@@ -1,0 +1,22 @@
+[Unit]
+Description=PrintWatch camera and telemetry agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/printwatch-agent.env
+WorkingDirectory=/opt/printwatch-agent
+ExecStart=/opt/printwatch-agent/.venv/bin/python -m printwatch.main
+Restart=always
+RestartSec=5
+User=printwatch
+SupplementaryGroups=video render i2c dialout
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/printwatch
+
+[Install]
+WantedBy=multi-user.target
