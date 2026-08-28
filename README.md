@@ -9,6 +9,7 @@
 3. `./image/build-image.sh`로 공통 Raspberry Pi OS 이미지를 한 번 만듭니다.
 4. 각 SD 카드에 `PRINTWATCH_DEVICE_TOKEN=... ./image/flash.sh printer-1 image.img.xz /dev/diskN`을 실행합니다.
 5. [FreeCAD 출력 안내](hardware/freecad/README.md)에 따라 하우징을 출력합니다.
+6. [물리 커미셔닝 절차](docs/commissioning.md)로 첫 세트를 검증한 뒤 나머지 두 세트를 복제합니다.
 
 보안상 웹 서버는 프린터를 제어하지 않습니다. Pi는 상태 질의 명령만 보내며, 전원·히터·모터·출력 중지 명령은 구현하지 않았습니다.
 

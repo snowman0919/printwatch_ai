@@ -34,3 +34,7 @@ curl -fsS https://3dp.kotori9.run/api/health
 - 초대된 `@dimigo.hs.kr` 계정은 대시보드에 들어가야 합니다.
 - 다른 도메인의 기존 Clerk 사용자는 `/unauthorized`로 이동해야 합니다.
 - 로그아웃 후 `/dashboard`와 `/api/app/dashboard`는 인증을 요구해야 합니다.
+
+## 5. 물리 장비 검수
+
+세 대를 한꺼번에 조립하지 말고 [물리 커미셔닝 절차](commissioning.md)로 `printer-1` 한 세트를 먼저 통과시킵니다.
