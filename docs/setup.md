@@ -7,7 +7,7 @@
 3. production 도메인에 `3dp.kotori9.run`을 등록합니다.
 4. publishable key와 secret key를 서버의 `.env`에 넣습니다. 저장소나 채팅에는 넣지 않습니다.
 
-애플리케이션은 초대 정책과 별도로 모든 보호된 서버 경계에서 `@dimigo.hs.kr` primary email을 검사합니다.
+애플리케이션은 초대 정책과 별도로 모든 보호된 서버 경계에서 `@dimigo.hs.kr` primary email과 같은 주소의 검증된 Google 외부 계정 연결을 검사합니다.
 
 ## 2. Cloudflare
 

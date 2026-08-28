@@ -6,9 +6,9 @@
 - The synthetic spaghetti fixture was classified `failed / spaghetti / 0.95`, and the dashboard derived `실패 감지` while the device heartbeat was fresh.
 - A fresh production-image regression check found that a 1440 × 900 PNG could exceed the 90-second inference boundary. The real route now keeps the stored snapshot intact but sends a 720px JPEG copy to Qwythos; an isolated production container completed the multipart route in 17 seconds with `analysisError=false` and returned `failed / spaghetti / 0.95`.
 - A real device-token request uploaded three distinct frames through `POST /api/device/frame`; an invalid token returned 401, valid uploads returned 200, and only one normalized JPEG remained for the printer. An authenticated Aside browser read `NEAR LIVE · 1 FPS` and changed the displayed media URL on the next one-second poll after a new upload.
-- The exact school-domain predicate accepts `student@dimigo.hs.kr` and rejects both a subdomain and an attacker-controlled suffix.
+- The final server authorization predicate accepts only an exact `@dimigo.hs.kr` primary address with a verified Google external account carrying the same address. It rejects a subdomain, attacker-controlled suffix, another OAuth provider, an unverified Google account, and a mismatched Google address.
 - Clerk production uses custom Google OAuth credentials with only the Clerk callback URI and is saved as invite-only. Cloudflare Domain Connect created five DNS-only CNAME records; Clerk reports application 2/2 verified, email 3/3 verified, and both SSL certificates issued. The public sign-in page rendered the Google button through the Clerk custom domain.
-- Google Auth Platform is external and in production with only OpenID, email, and profile scopes. Its public app, privacy, and terms URLs each returned HTTP 200 before publication. Clicking the production Google button reached the Google account chooser with the exact Clerk callback; no account was selected during verification. GCP's external audience is narrowed by Clerk invite-only and the server-side exact `@dimigo.hs.kr` check.
+- Google Auth Platform is external and in production with only OpenID, email, and profile scopes. Its public app, privacy, and terms URLs each returned HTTP 200 before publication. The original failed callback was read from Clerk production as `sign_up_mode_restricted`; the exact school address now exists as an invited Clerk user. Retrying the production Google button selected that school account and reached Google's passkey challenge, so the Clerk restriction screen is no longer the current boundary. Completing the user-controlled passkey and observing the authenticated dashboard remain the final live-login check. GCP's external audience is narrowed by Clerk invite-only and the server-side verified school-Google check.
 - A production Docker image built on `dev`; an isolated container returned `{"ok":true}` from `/api/health` with `/data` mounted as the unprivileged runtime user.
 - The Clerk publishable key crossed the Docker build boundary into the browser bundle while the secret remained runtime-only. Compose rejected a missing public key, and the environment preflight rejected placeholders and invalid three-device token sets without printing values. The deployed topology uses the existing host systemd tunnel connector, avoiding a second token-bearing container.
 - The real production token set passed the URL-safe, unique three-device preflight without printing values. A simulated macOS flash verified the image checksum, traversed confirmation, writer invocation, boot mount, mode-0600 `printwatch.env` creation and unmount; a corrupted image and a quote/newline token were rejected before the writer boundary.
@@ -58,16 +58,19 @@ Inside the rebuilt rootfs, the ARM64 Python runtime successfully imported `aioht
 
 ### Printable housing
 
-FreeCAD generated five valid solids and exported each to STL and STEP:
+FreeCAD generated six valid solids and exported each to STL and STEP:
 
-The source was regenerated read-only with FreeCAD 1.1.3 in a clean container. All five volumes and facet counts matched the committed artifacts exactly.
+The source was regenerated with FreeCAD 1.1.3 in a clean container; the resulting six volumes and facet counts are recorded below.
 
 | Part | Solid volume | STL facets |
 | --- | ---: | ---: |
-| Pi 4 + OLED base | 44,380.4 mm³ | 5,188 |
-| Pi 4 + OLED lid | 20,230.0 mm³ | 2,296 |
+| Pi 4 + OLED base | 44,400.6 mm³ | 5,188 |
+| Pi 4 + OLED lid | 20,924.6 mm³ | 2,084 |
+| OLED retainer | 106.0 mm³ | 728 |
 | Camera Module 2 pod | 4,795.0 mm³ | 1,920 |
 | Camera tilt arm | 5,475.8 mm³ | 884 |
-| Ender V3 SE mount | 12,904.7 mm³ | 1,492 |
+| Ender V3 SE fixed-upright mount | 28,560.8 mm³ | 1,820 |
 
-The enclosure base and Ender plate now derive the same 55 × 22 mm four-point pattern from shared coordinates. The base has countersunk M3 seats and the plate has 4.1 mm heat-set-insert bores, providing a direct printable attachment path that was absent in the previous geometry. These checks establish valid CAD solids and printable meshes, not physical fit. The actual OLED breakout, camera board, printer clearance and PETG shrinkage must be measured with one prototype before printing three sets.
+The supplied OLED drawing sets the board envelope to 26 × 26 mm and active area to 21.74 × 10.86 mm. The lid uses 0.20 mm clearance on every pocket side, a three-sided capture rail, an open four-pin-header side, and one printed retainer; it no longer assumes an undocumented module hole pattern. The lid rim also uses 0.20 mm per-side clearance and the nominal M3 enclosure holes are 3.20 mm. The enclosure base and Ender plate derive the same 55 × 22 mm four-point pattern from shared coordinates.
+
+The replacement 104 × 56 × 7 mm Ender plate uses two pairs of 13 × 3.2 mm strap slots and four 2 mm standoffs. It mounts the enclosure on the outside face of one fixed Z upright, removing the previous moving-gantry/T-slot assumption. A binary-STL readback found zero non-manifold edges in all six meshes, and the lid, plate, and retainer were visually read back from their actual triangle geometry. These checks establish coherent CAD solids and the intended fixed-frame interface, not physical fit against an unavailable printer. One PETG prototype still has to prove OLED PCB thickness/header orientation, upright strap length, shrinkage, cable bend radius, and full X/Z travel before printing three sets.
