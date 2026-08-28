@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import re
 import stat
 import sys
 from pathlib import Path
@@ -40,8 +41,8 @@ def validate(values: dict[str, str]) -> list[str]:
         tokens = json.loads(values.get("DEVICE_TOKENS_JSON", ""))
         if set(tokens) != PRINTERS:
             errors.append("DEVICE_TOKENS_JSON must contain exactly printer-1, printer-2, printer-3")
-        elif any(not isinstance(token, str) or len(token) < 24 for token in tokens.values()):
-            errors.append("every device token must contain at least 24 characters")
+        elif any(not isinstance(token, str) or re.fullmatch(r"[A-Za-z0-9_-]{24,}", token) is None for token in tokens.values()):
+            errors.append("every device token must be at least 24 URL-safe characters")
         elif len(set(tokens.values())) != 3:
             errors.append("device tokens must be unique")
     except (json.JSONDecodeError, TypeError):

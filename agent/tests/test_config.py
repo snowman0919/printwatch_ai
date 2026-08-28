@@ -20,6 +20,13 @@ class ConfigTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "between 0.5 and 10"):
                 Config.from_env()
 
+    def test_rejects_token_that_cannot_be_safely_serialized(self):
+        values = self.environment("1")
+        values["PRINTWATCH_DEVICE_TOKEN"] = 'a' * 24 + '"\nINJECTED=1'
+        with patch.dict(os.environ, values, clear=True):
+            with self.assertRaisesRegex(ValueError, "URL-safe"):
+                Config.from_env()
+
 
 if __name__ == "__main__":
     unittest.main()

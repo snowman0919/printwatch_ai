@@ -18,6 +18,7 @@
 cd web && npm test && npm run typecheck && npm run lint && npm run build
 PYTHONPATH=agent python3 -m unittest discover -s agent/tests -v
 (cd deploy && python3 -m unittest -v test_check_env.py)
+python3 -m unittest -v image/test_flash.py
 bash -n image/build-image.sh image/flash.sh deploy/deploy.sh
 ```
 

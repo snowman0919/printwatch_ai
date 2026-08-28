@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import os
+import re
 
 
 @dataclass(frozen=True)
@@ -20,8 +21,8 @@ class Config:
         token = os.environ.get("PRINTWATCH_DEVICE_TOKEN", "")
         if printer_id not in {"printer-1", "printer-2", "printer-3"}:
             raise ValueError("PRINTWATCH_PRINTER_ID must be printer-1, printer-2, or printer-3")
-        if len(token) < 24:
-            raise ValueError("PRINTWATCH_DEVICE_TOKEN must contain at least 24 characters")
+        if re.fullmatch(r"[A-Za-z0-9_-]{24,}", token) is None:
+            raise ValueError("PRINTWATCH_DEVICE_TOKEN must be at least 24 URL-safe characters")
         live_interval = float(os.environ.get("PRINTWATCH_LIVE_INTERVAL", "1"))
         if not 0.5 <= live_interval <= 10:
             raise ValueError("PRINTWATCH_LIVE_INTERVAL must be between 0.5 and 10 seconds")

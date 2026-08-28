@@ -25,6 +25,11 @@ class CheckEnvTest(unittest.TestCase):
         values["OLLAMA_MODEL"] = "another-model"
         self.assertIn("OLLAMA_MODEL must be Qwythos-v2-9B:Q4", validate(values))
 
+    def test_rejects_device_token_that_cannot_be_safely_serialized(self):
+        values = self.valid()
+        values["DEVICE_TOKENS_JSON"] = '{"printer-1":"aaaaaaaaaaaaaaaaaaaaaaaa\\nINJECTED=1","printer-2":"bbbbbbbbbbbbbbbbbbbbbbbb","printer-3":"cccccccccccccccccccccccc"}'
+        self.assertIn("every device token must be at least 24 URL-safe characters", validate(values))
+
 
 if __name__ == "__main__":
     unittest.main()

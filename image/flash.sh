@@ -9,7 +9,7 @@ device=$3
 token=${PRINTWATCH_DEVICE_TOKEN:-}
 [[ "$printer_id" =~ ^printer-[1-3]$ ]] || usage
 [[ -f "$image" ]] || { echo "Image not found: $image" >&2; exit 2; }
-[[ ${#token} -ge 24 ]] || { echo "PRINTWATCH_DEVICE_TOKEN must contain at least 24 characters" >&2; exit 2; }
+[[ "$token" =~ ^[A-Za-z0-9_-]{24,}$ ]] || { echo "PRINTWATCH_DEVICE_TOKEN must be at least 24 URL-safe characters" >&2; exit 2; }
 [[ "$device" != "/" && "$device" != "/dev" && "$device" == /dev/* ]] || { echo "Refusing unsafe device path" >&2; exit 2; }
 
 echo "This will overwrite $device with $image for $printer_id."
