@@ -35,6 +35,12 @@ curl -fsS https://3dp.kotori9.run/api/health
 - 다른 도메인의 기존 Clerk 사용자는 `/unauthorized`로 이동해야 합니다.
 - 로그아웃 후 `/dashboard`와 `/api/app/dashboard`는 인증을 요구해야 합니다.
 
-## 5. 물리 장비 검수
+## 5. 브랜치와 자동 배포
+
+- `dev`: 개발 작업과 검증을 쌓는 브랜치입니다.
+- `main`: production 기준 브랜치입니다. `main`에 push되면 `Deploy production` GitHub Actions가 `dev` 호스트의 `printwatch-deploy` self-hosted runner에서 실행됩니다.
+- Actions는 저장소 secret으로 SSH 키를 복제하지 않습니다. `deploy/printwatch-actions-runner.service`가 runner를 `kotori9` 사용자로 유지하며, runner가 `/home/kotori9/printwatch_ai/.env`를 그대로 둔 채 현재 커밋 archive만 배포하고 Docker health와 `https://3dp.kotori9.run/api/health`를 모두 확인합니다.
+
+## 6. 물리 장비 검수
 
 세 대를 한꺼번에 조립하지 말고 [물리 커미셔닝 절차](commissioning.md)로 `printer-1` 한 세트를 먼저 통과시킵니다.

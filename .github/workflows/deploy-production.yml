@@ -1,0 +1,27 @@
+name: Deploy production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: printwatch-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux, x64, printwatch-deploy]
+    timeout-minutes: 20
+    steps:
+      - name: Check out the pushed commit
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Deploy and verify production
+        env:
+          PRINTWATCH_DEPLOY_HOST: local
+          PRINTWATCH_DEPLOY_DIR: /home/kotori9/printwatch_ai
+        run: ./deploy/deploy.sh
