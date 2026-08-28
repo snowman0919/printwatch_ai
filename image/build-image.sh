@@ -61,4 +61,7 @@ fi
 (cd "$pi_gen" && PRESERVE_CONTAINER=1 ./build-docker.sh)
 image_path=$(find "$pi_gen/deploy" -maxdepth 1 -name '*printwatch-pi4*.img.xz' -print -quit)
 [[ -n "$image_path" ]] || { echo "pi-gen finished without the expected image" >&2; exit 1; }
+xz -t "$image_path"
+openssl dgst -sha256 -r "$image_path" > "$image_path.sha256"
 printf 'Image: %s\n' "$image_path"
+printf 'Checksum: %s.sha256\n' "$image_path"

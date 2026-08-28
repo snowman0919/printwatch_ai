@@ -49,6 +49,7 @@ Local evidence paths (generated, not committed):
 The pinned official `pi-gen` ARM64 path completed on the x86_64 `dev` host through registered QEMU emulation. The resulting Raspberry Pi OS Trixie image passed `xz -t`:
 
 - Image: `image_2026-08-28-printwatch-pi4.img.xz`
+- Checksum: `image_2026-08-28-printwatch-pi4.img.xz.sha256`
 - Size: 745,800,416 bytes
 - SHA-256: `f2a4485aa6709e30db4588a707e21be7dbafcb58776183115af0cd09b90677b5`
 
