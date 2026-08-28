@@ -51,10 +51,10 @@ The pinned official `pi-gen` ARM64 path completed on the x86_64 `dev` host throu
 
 - Image: `image_2026-08-28-printwatch-pi4.img.xz`
 - Checksum: `image_2026-08-28-printwatch-pi4.img.xz.sha256`
-- Size: 745,800,416 bytes
-- SHA-256: `f2a4485aa6709e30db4588a707e21be7dbafcb58776183115af0cd09b90677b5`
+- Size: 746,774,120 bytes
+- SHA-256: `9e6ca7afa0d7609c74331414f4d7d39a350778f03614f4cb5fcaf6e548701bb1`
 
-Inside the rebuilt rootfs, the ARM64 Python runtime successfully imported `aiohttp`, `luma.oled`, `serial`, `picamera2`, and `printwatch.config`. Both `printwatch-firstboot.service` and `printwatch-agent.service` were enabled, the current URL-safe token validation was present, application WebRTC imports were absent, and `dtparam=i2c_arm=on` was set. This validates construction and runtime linkage; camera capture, OLED output, Ethernet boot, and printer serial telemetry still require the [physical commissioning procedure](commissioning.md) on a Pi 4.
+Inside the rebuilt rootfs, the ARM64 Python runtime successfully imported `aiohttp`, `luma.oled`, `serial`, `picamera2`, `printwatch.config`, and `printwatch.telemetry`. Both `printwatch-firstboot.service` and `printwatch-agent.service` were enabled, the current URL-safe token validation and persistent serial connection were present, application WebRTC imports were absent, and `dtparam=i2c_arm=on` was set. This validates construction and runtime linkage; camera capture, OLED output, Ethernet boot, and printer serial telemetry still require the [physical commissioning procedure](commissioning.md) on a Pi 4.
 
 ### Printable housing
 
