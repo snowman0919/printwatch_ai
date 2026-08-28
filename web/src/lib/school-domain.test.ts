@@ -9,7 +9,7 @@ test("accepts only the exact DIMIGO mail domain", () => {
 });
 
 test("requires a verified Google account for the same school address", () => {
-  const verifiedGoogle = [{ provider: "google", emailAddress: "student@dimigo.hs.kr", verification: { status: "verified" } }];
+  const verifiedGoogle = [{ provider: "oauth_google", emailAddress: "student@dimigo.hs.kr", verification: { status: "verified" } }];
   assert.equal(hasVerifiedSchoolGoogleAccount("student@dimigo.hs.kr", verifiedGoogle), true);
   assert.equal(hasVerifiedSchoolGoogleAccount("other@dimigo.hs.kr", verifiedGoogle), false);
   assert.equal(hasVerifiedSchoolGoogleAccount("student@dimigo.hs.kr", [{ ...verifiedGoogle[0], provider: "microsoft" }]), false);

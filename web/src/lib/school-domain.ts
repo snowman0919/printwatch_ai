@@ -8,7 +8,7 @@ export function hasVerifiedSchoolGoogleAccount(
 ): boolean {
   const normalized = email.toLowerCase();
   return isSchoolEmail(normalized) && accounts.some((account) =>
-    account.provider === "google"
+    account.provider === "oauth_google"
     && account.verification?.status === "verified"
     && account.emailAddress.toLowerCase() === normalized,
   );
