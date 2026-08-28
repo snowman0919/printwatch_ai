@@ -23,7 +23,7 @@ rm -rf "$pi_gen/stage-printwatch"
 cp -a "$repo_root/image/stage" "$pi_gen/stage-printwatch"
 cp -a "$repo_root/agent" "$pi_gen/stage-printwatch/00-agent/files/agent"
 touch "$pi_gen/stage-printwatch/EXPORT_IMAGE" "$pi_gen/stage2/SKIP_IMAGES"
-chmod +x "$pi_gen/stage-printwatch/00-agent/00-run.sh" "$pi_gen/stage-printwatch/00-agent/files/printwatch-firstboot"
+chmod +x "$pi_gen/stage-printwatch/prerun.sh" "$pi_gen/stage-printwatch/00-agent/00-run.sh" "$pi_gen/stage-printwatch/00-agent/files/printwatch-firstboot"
 
 random_password=$(openssl rand -base64 32)
 cat > "$pi_gen/config" <<EOF
@@ -36,7 +36,7 @@ LOCALE_DEFAULT="en_US.UTF-8"
 TIMEZONE_DEFAULT="Asia/Seoul"
 KEYBOARD_KEYMAP="us"
 TARGET_HOSTNAME="printwatch"
-FIRST_USER_NAME="operator"
+FIRST_USER_NAME="pwadmin"
 FIRST_USER_PASS="$random_password"
 DISABLE_FIRST_BOOT_USER_RENAME=1
 ENABLE_SSH=1
@@ -59,6 +59,6 @@ if [[ $(uname -m) != arm* && $(uname -m) != aarch64 ]] && ! command -v qemu-aarc
 fi
 
 (cd "$pi_gen" && PRESERVE_CONTAINER=1 ./build-docker.sh)
-image_path=$(find "$pi_gen/deploy" -maxdepth 1 -name 'printwatch-pi4*.img.xz' -print -quit)
+image_path=$(find "$pi_gen/deploy" -maxdepth 1 -name '*printwatch-pi4*.img.xz' -print -quit)
 [[ -n "$image_path" ]] || { echo "pi-gen finished without the expected image" >&2; exit 1; }
 printf 'Image: %s\n' "$image_path"
