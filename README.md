@@ -7,7 +7,7 @@
 1. [운영 설정](docs/setup.md)에 따라 Clerk와 Cloudflare 비밀값을 `dev:/home/kotori9/printwatch_ai/.env`에 넣습니다.
 2. `./deploy/deploy.sh`로 `dev` 장비에 Docker 배포합니다.
 3. `./image/build-image.sh`로 공통 Raspberry Pi OS 이미지를 한 번 만듭니다.
-4. 각 SD 카드에 `PRINTWATCH_DEVICE_TOKEN=... ./image/flash.sh printer-1 image.img.xz /dev/diskN`을 실행합니다.
+4. 이미지와 함께 생성된 `.sha256` 파일을 같은 위치에 둔 뒤 각 SD 카드에 `PRINTWATCH_DEVICE_TOKEN=... ./image/flash.sh printer-1 image.img.xz /dev/diskN`을 실행합니다.
 5. [FreeCAD 출력 안내](hardware/freecad/README.md)에 따라 하우징을 출력합니다.
 6. [물리 커미셔닝 절차](docs/commissioning.md)로 첫 세트를 검증한 뒤 나머지 두 세트를 복제합니다.
 

@@ -11,6 +11,12 @@ token=${PRINTWATCH_DEVICE_TOKEN:-}
 [[ -f "$image" ]] || { echo "Image not found: $image" >&2; exit 2; }
 [[ "$token" =~ ^[A-Za-z0-9_-]{24,}$ ]] || { echo "PRINTWATCH_DEVICE_TOKEN must be at least 24 URL-safe characters" >&2; exit 2; }
 [[ "$device" != "/" && "$device" != "/dev" && "$device" == /dev/* ]] || { echo "Refusing unsafe device path" >&2; exit 2; }
+checksum_file="$image.sha256"
+[[ -f "$checksum_file" ]] || { echo "Checksum not found: $checksum_file" >&2; exit 2; }
+command -v openssl >/dev/null || { echo "OpenSSL is required" >&2; exit 2; }
+expected_checksum=$(awk 'NR == 1 { print $1 }' "$checksum_file")
+actual_checksum=$(openssl dgst -sha256 -r "$image" | awk '{ print $1 }')
+[[ "$expected_checksum" =~ ^[0-9a-fA-F]{64}$ && "$actual_checksum" == "$expected_checksum" ]] || { echo "Image checksum mismatch" >&2; exit 1; }
 
 echo "This will overwrite $device with $image for $printer_id."
 read -r -p "Type the exact device path to continue: " confirmation

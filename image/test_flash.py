@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import hashlib
 import subprocess
 import tempfile
 import unittest
@@ -15,7 +16,8 @@ class FlashTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             image = root / "image.img.xz"
-            image.touch()
+            image.write_bytes(b"verified image")
+            Path(f"{image}.sha256").write_text(f"{hashlib.sha256(image.read_bytes()).hexdigest()}  {image}\n")
             boot = root / "boot"
             boot.mkdir()
             tools = root / "bin"
@@ -47,6 +49,30 @@ class FlashTest(unittest.TestCase):
             self.assertIn('PRINTWATCH_DEVICE_TOKEN="' + "a" * 24 + '"', config)
             self.assertIn('PRINTWATCH_LIVE_INTERVAL="1"', config)
             self.assertEqual((boot / "printwatch.env").stat().st_mode & 0o777, 0o600)
+
+    def test_rejects_corrupted_image_before_writer_runs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            image = root / "image.img.xz"
+            image.write_bytes(b"original")
+            Path(f"{image}.sha256").write_text(f"{hashlib.sha256(image.read_bytes()).hexdigest()}  {image}\n")
+            image.write_bytes(b"corrupted")
+            marker = root / "writer-ran"
+            tools = root / "bin"
+            tools.mkdir()
+            writer = tools / "rpi-imager"
+            writer.write_text(f"#!/bin/sh\ntouch '{marker}'\n")
+            writer.chmod(0o755)
+            result = subprocess.run(
+                [FLASH, "printer-1", image, "/dev/disk-test"],
+                text=True,
+                capture_output=True,
+                env={**os.environ, "PATH": f"{tools}:{os.environ['PATH']}", "PRINTWATCH_DEVICE_TOKEN": "a" * 24},
+                check=False,
+            )
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("checksum mismatch", result.stderr)
+            self.assertFalse(marker.exists())
 
     def test_rejects_unsafe_token_before_writer_runs(self):
         with tempfile.TemporaryDirectory() as directory:
