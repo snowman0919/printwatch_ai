@@ -27,4 +27,4 @@ Next.js의 장치 경계는 `web/src/app/api/device`, 사용자 경계는 `web/s
 
 ## 배포 경계
 
-`compose.yaml`은 `web`과 `cloudflared` 두 컨테이너만 실행합니다. 공개 정보인 Clerk publishable key는 브라우저 번들 생성 시 Docker build argument로 전달하고, Clerk secret과 장치 token은 런타임 `.env`에만 둡니다. `deploy/check_env.py`는 값을 실행하거나 출력하지 않고 production 키, 세 장치의 고유 token, Tunnel/TURN 설정과 파일 권한을 배포 전에 확인합니다. 외부 공개는 Cloudflare Tunnel이 `http://web:3000`으로 전달하며, 호스트 포트 3300은 loopback에만 열립니다. SQLite와 스냅샷은 Docker named volume에 남습니다. Ollama는 `dev`에서 Tailscale 주소 `100.90.167.128:11434`로 접근합니다.
+`compose.yaml`은 `web` 컨테이너만 실행합니다. 공개 정보인 Clerk publishable key는 브라우저 번들 생성 시 Docker build argument로 전달하고, Clerk secret과 장치 token은 런타임 `.env`에만 둡니다. `deploy/check_env.py`는 값을 실행하거나 출력하지 않고 production 키, 세 장치의 고유 token, TURN 설정과 파일 권한을 배포 전에 확인합니다. `dev` 호스트의 systemd `cloudflared`가 loopback의 `http://127.0.0.1:3300`을 외부에 공개하므로 Tunnel token은 애플리케이션 환경에 복제하지 않습니다. SQLite와 스냅샷은 Docker named volume에 남습니다. Ollama는 `dev`에서 Tailscale 주소 `100.90.167.128:11434`로 접근합니다.

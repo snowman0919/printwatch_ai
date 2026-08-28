@@ -7,7 +7,7 @@
 - A browser offer traversed the user route, appeared in the authenticated device queue, accepted a device answer, and returned that answer only to the creating viewer.
 - The exact school-domain predicate accepts `student@dimigo.hs.kr` and rejects both a subdomain and an attacker-controlled suffix.
 - A production Docker image built on `dev`; an isolated container returned `{"ok":true}` from `/api/health` with `/data` mounted as the unprivileged runtime user.
-- The Clerk publishable key crossed the Docker build boundary into the browser bundle while the secret remained runtime-only. Compose rejected a missing public key or Tunnel token, and the environment preflight rejected placeholders and invalid three-device token sets without printing values.
+- The Clerk publishable key crossed the Docker build boundary into the browser bundle while the secret remained runtime-only. Compose rejected a missing public key, and the environment preflight rejected placeholders and invalid three-device token sets without printing values. The deployed topology uses the existing host systemd tunnel connector, avoiding a second token-bearing container.
 
 ## StyleSeed code gate
 

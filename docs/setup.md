@@ -11,8 +11,8 @@
 
 ## 2. Cloudflare
 
-1. Zero Trust에서 named tunnel을 만들고 public hostname `3dp.kotori9.run`의 service를 `http://web:3000`으로 지정합니다.
-2. tunnel token을 `.env`의 `CLOUDFLARE_TUNNEL_TOKEN`에 넣습니다.
+1. `dev` 호스트의 systemd `cloudflared` connector를 사용합니다.
+2. Zero Trust에서 named tunnel의 public hostname `3dp.kotori9.run` service를 `http://127.0.0.1:3300`으로 지정합니다.
 3. WebRTC TURN key를 만들고 key ID와 API token을 `.env`에 넣습니다. 없으면 STUN만 사용하므로 서로 다른 NAT 환경에서 라이브 연결이 실패할 수 있습니다.
 
 ## 3. 서버 환경 파일
@@ -25,7 +25,7 @@ ssh dev 'install -d -m 700 /home/kotori9/printwatch_ai && install -m 600 /dev/nu
 curl -fsS https://3dp.kotori9.run/api/health
 ```
 
-`deploy.sh`는 값을 출력하지 않고 `.env`의 mode 600, Clerk production 키, Tunnel/TURN 설정, 정확히 세 개의 고유 장치 token을 먼저 검사합니다.
+`deploy.sh`는 값을 출력하지 않고 `.env`의 mode 600, Clerk production 키, TURN 설정, 정확히 세 개의 고유 장치 token을 먼저 검사합니다. Tunnel token은 애플리케이션 `.env`에 저장하지 않습니다.
 
 ## 4. Clerk 검수
 
