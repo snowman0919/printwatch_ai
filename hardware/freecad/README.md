@@ -3,8 +3,10 @@
 `printwatch_housing.py` generates five printable solids, STEP files, and one editable FreeCAD document.
 
 ```bash
-PRINTWATCH_CAD_OUT="$PWD/out" FreeCADCmd printwatch_housing.py
+./build.sh
 ```
+
+`build.sh` uses an installed `FreeCADCmd` first. If it is unavailable, it runs the same script in a digest-pinned FreeCAD container and writes only to `out/`.
 
 Default hardware:
 

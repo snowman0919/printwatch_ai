@@ -55,6 +55,8 @@ Inside the built rootfs, the ARM64 Python runtime successfully imported `aiohttp
 
 FreeCAD generated five valid solids and exported each to STL and STEP:
 
+The source was regenerated read-only with FreeCAD 1.1.3 in a clean container. All five volumes and facet counts matched the committed artifacts exactly.
+
 | Part | Solid volume | STL facets |
 | --- | ---: | ---: |
 | Pi 4 + OLED base | 44,055.7 mm³ | 3,256 |
