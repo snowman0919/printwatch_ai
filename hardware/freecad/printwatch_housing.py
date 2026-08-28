@@ -22,6 +22,8 @@ OLED_BOARD_X, OLED_BOARD_Y = 27.5, 27.8
 OLED_WINDOW_X, OLED_WINDOW_Y = 22.4, 11.5
 CAMERA_BOARD_X, CAMERA_BOARD_Y = 25.0, 24.0
 CAMERA_HOLE_X, CAMERA_HOLE_Y = 21.0, 12.5
+MOUNT_PLATE_X, MOUNT_PLATE_Y = 82.0, 34.0
+CASE_MOUNT_X, CASE_MOUNT_Y = (27.0, 82.0), (27.0, 49.0)
 
 
 def rounded_box(x, y, z, radius=3.0):
@@ -54,6 +56,12 @@ def base():
     # Bottom vents stay bridge-free when the base prints in its normal orientation.
     for x in range(20, 86, 11):
         shape = shape.cut(Part.makeBox(5, 38, WALL + 2, App.Vector(x, 20, -1)))
+    # Four M3 seats mate the enclosure to the Ender extrusion plate.
+    for x in CASE_MOUNT_X:
+        for y in CASE_MOUNT_Y:
+            shape = shape.fuse(Part.makeCylinder(4.5, 4.0, App.Vector(x, y, 0)))
+            shape = shape.cut(Part.makeCylinder(1.7, 6.0, App.Vector(x, y, -1)))
+            shape = shape.cut(Part.makeCone(1.7, 3.4, 1.7, App.Vector(x, y, 2.3)))
     # Pi 4 mounting bosses: board origin 9 mm from the enclosure corner.
     for x in (12.5, 12.5 + PI_HOLE_X):
         for y in (12.5, 12.5 + PI_HOLE_Y):
@@ -114,13 +122,15 @@ def camera_arm():
 
 def extrusion_mount():
     # Two horizontal slots accept M5 screws/T-nuts on common Ender gantry profiles.
-    plate = rounded_box(82, 34, 5, 3)
+    plate = rounded_box(MOUNT_PLATE_X, MOUNT_PLATE_Y, 5, 3)
     for x in (21, 61):
         plate = plate.cut(slot(9, 5.5, 7, App.Vector(x, 17, -1)))
-    # M3 case attachment holes; the 60 mm spacing is deliberately parameter-free.
-    for x in (11, 71):
-        plate = plate.cut(Part.makeCylinder(1.7, 7, App.Vector(x, 6, -1)))
-        plate = plate.cut(Part.makeCylinder(1.7, 7, App.Vector(x, 28, -1)))
+    # Translate the enclosure's shared M3 pattern into the centered plate coordinates.
+    offset_x = (CASE_X - MOUNT_PLATE_X) / 2
+    offset_y = (CASE_Y - MOUNT_PLATE_Y) / 2
+    for x in CASE_MOUNT_X:
+        for y in CASE_MOUNT_Y:
+            plate = plate.cut(Part.makeCylinder(2.05, 7, App.Vector(x - offset_x, y - offset_y, -1)))
     return plate
 
 

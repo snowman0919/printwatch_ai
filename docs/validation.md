@@ -51,10 +51,10 @@ The pinned official `pi-gen` ARM64 path completed on the x86_64 `dev` host throu
 
 - Image: `image_2026-08-28-printwatch-pi4.img.xz`
 - Checksum: `image_2026-08-28-printwatch-pi4.img.xz.sha256`
-- Size: 746,774,120 bytes
-- SHA-256: `9e6ca7afa0d7609c74331414f4d7d39a350778f03614f4cb5fcaf6e548701bb1`
+- Size: 744,203,912 bytes
+- SHA-256: `ae2c709a38b9714c1d1bdf8d728926dcb599d3ea0c0a0a750acfd89211517748`
 
-Inside the rebuilt rootfs, the ARM64 Python runtime successfully imported `aiohttp`, `luma.oled`, `serial`, `picamera2`, `printwatch.config`, and `printwatch.telemetry`. Both `printwatch-firstboot.service` and `printwatch-agent.service` were enabled, the current URL-safe token validation and persistent serial connection were present, application WebRTC imports were absent, and `dtparam=i2c_arm=on` was set. This validates construction and runtime linkage; camera capture, OLED output, Ethernet boot, and printer serial telemetry still require the [physical commissioning procedure](commissioning.md) on a Pi 4.
+Inside the rebuilt rootfs, the ARM64 Python runtime successfully imported `aiohttp`, `luma.oled`, `serial`, `picamera2`, `printwatch.config`, and `printwatch.telemetry`. Both `printwatch-firstboot.service` and `printwatch-agent.service` were enabled, the current URL-safe token validation and persistent serial connection were present, application WebRTC imports were absent, and `dtparam=i2c_arm=on` was set. Executing the actual first-boot program against a seven-line configuration containing a shell command rejected the file before installing it and did not execute the command. This validates construction, runtime linkage, and the boot-configuration trust boundary; camera capture, OLED output, Ethernet boot, and printer serial telemetry still require the [physical commissioning procedure](commissioning.md) on a Pi 4.
 
 ### Printable housing
 
@@ -64,10 +64,10 @@ The source was regenerated read-only with FreeCAD 1.1.3 in a clean container. Al
 
 | Part | Solid volume | STL facets |
 | --- | ---: | ---: |
-| Pi 4 + OLED base | 44,055.7 mm³ | 3,256 |
+| Pi 4 + OLED base | 44,380.4 mm³ | 5,188 |
 | Pi 4 + OLED lid | 20,230.0 mm³ | 2,296 |
 | Camera Module 2 pod | 4,795.0 mm³ | 1,920 |
 | Camera tilt arm | 5,475.8 mm³ | 884 |
-| Ender V3 SE mount | 12,987.2 mm³ | 1,492 |
+| Ender V3 SE mount | 12,904.7 mm³ | 1,492 |
 
-These checks establish valid CAD solids and printable meshes, not physical fit. The actual OLED breakout, camera board, printer clearance and PETG shrinkage must be measured with one prototype before printing three sets.
+The enclosure base and Ender plate now derive the same 55 × 22 mm four-point pattern from shared coordinates. The base has countersunk M3 seats and the plate has 4.1 mm heat-set-insert bores, providing a direct printable attachment path that was absent in the previous geometry. These checks establish valid CAD solids and printable meshes, not physical fit. The actual OLED breakout, camera board, printer clearance and PETG shrinkage must be measured with one prototype before printing three sets.
