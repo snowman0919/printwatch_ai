@@ -25,6 +25,8 @@ ssh dev 'install -d -m 700 /home/kotori9/printwatch_ai && install -m 600 /dev/nu
 curl -fsS https://3dp.kotori9.run/api/health
 ```
 
+`deploy.sh`는 값을 출력하지 않고 `.env`의 mode 600, Clerk production 키, Tunnel/TURN 설정, 정확히 세 개의 고유 장치 token을 먼저 검사합니다.
+
 ## 4. Clerk 검수
 
 - 초대받지 않은 Google 계정은 가입할 수 없어야 합니다.
