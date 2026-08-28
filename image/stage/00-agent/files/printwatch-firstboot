@@ -1,5 +1,7 @@
 #!/bin/sh
 set -eu
 install -m 0600 /boot/firmware/printwatch.env /etc/printwatch-agent.env
+. /etc/printwatch-agent.env
+hostnamectl set-hostname "printwatch-${PRINTWATCH_PRINTER_ID#printer-}"
 rm -f /boot/firmware/printwatch.env
 systemctl disable printwatch-firstboot.service

@@ -21,3 +21,4 @@ bash -n image/build-image.sh image/flash.sh deploy/deploy.sh
 ```
 
 전체 실행 경로와 실패 경계는 [아키텍처](docs/architecture.md)를 참고하세요.
+실제 검증 결과와 StyleSeed 점수는 [검증 기록](docs/validation.md)에 있습니다.

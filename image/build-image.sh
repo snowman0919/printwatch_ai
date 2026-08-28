@@ -59,4 +59,6 @@ if [[ $(uname -m) != arm* && $(uname -m) != aarch64 ]] && ! command -v qemu-aarc
 fi
 
 (cd "$pi_gen" && PRESERVE_CONTAINER=1 ./build-docker.sh)
-printf 'Image: %s\n' "$pi_gen/deploy/printwatch-pi4*.img.xz"
+image_path=$(find "$pi_gen/deploy" -maxdepth 1 -name 'printwatch-pi4*.img.xz' -print -quit)
+[[ -n "$image_path" ]] || { echo "pi-gen finished without the expected image" >&2; exit 1; }
+printf 'Image: %s\n' "$image_path"
