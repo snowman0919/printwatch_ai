@@ -46,16 +46,16 @@ STAGE_LIST="stage0 stage1 stage2 stage-printwatch"
 EOF
 
 if [[ $(uname -m) != arm* && $(uname -m) != aarch64 ]] && ! command -v qemu-aarch64 >/dev/null; then
-  docker build -t pi-gen "$pi_gen"
+  binfmt_image=tonistiigi/binfmt@sha256:400a4873b838d1b89194d982c45e5fb3cda4593fbfd7e08a02e76b03b21166f0
   mkdir -p "$build_root/bin"
-  helper_container=$(docker create pi-gen:latest)
+  helper_container=$(docker create "$binfmt_image")
   trap 'docker rm -f "$helper_container" >/dev/null 2>&1 || true' EXIT
   docker cp "$helper_container:/usr/bin/qemu-aarch64" "$build_root/bin/qemu-aarch64"
   docker rm "$helper_container" >/dev/null
   trap - EXIT
   chmod 755 "$build_root/bin/qemu-aarch64"
   export PATH="$build_root/bin:$PATH"
-  docker run --privileged --rm tonistiigi/binfmt@sha256:400a4873b838d1b89194d982c45e5fb3cda4593fbfd7e08a02e76b03b21166f0 --install arm64 >/dev/null
+  docker run --privileged --rm "$binfmt_image" --install arm64 >/dev/null
 fi
 
 (cd "$pi_gen" && PRESERVE_CONTAINER=1 ./build-docker.sh)
