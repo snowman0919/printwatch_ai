@@ -4,6 +4,7 @@
 
 - A real multipart request traversed `POST /api/device/snapshot`, JPEG normalization, SQLite persistence, Qwythos analysis at `100.90.167.128:11434/v1`, schema adaptation, and dashboard readback.
 - The synthetic spaghetti fixture was classified `failed / spaghetti / 0.95`, and the dashboard derived `실패 감지` while the device heartbeat was fresh.
+- A fresh production-image regression check found that a 1440 × 900 PNG could exceed the 90-second inference boundary. The real route now keeps the stored snapshot intact but sends a 720px JPEG copy to Qwythos; an isolated production container completed the multipart route in 17 seconds with `analysisError=false` and returned `failed / spaghetti / 0.95`.
 - A browser offer traversed the user route, appeared in the authenticated device queue, accepted a device answer, and returned that answer only to the creating viewer.
 - The exact school-domain predicate accepts `student@dimigo.hs.kr` and rejects both a subdomain and an attacker-controlled suffix.
 - A production Docker image built on `dev`; an isolated container returned `{"ok":true}` from `/api/health` with `/data` mounted as the unprivileged runtime user.
