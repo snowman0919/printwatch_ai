@@ -15,6 +15,8 @@
   --warning: #e1ad57;
   --danger: #ff968a;
   --focus: #95c9ff;
+  --radius-panel: 14px;
+  --radius-control: 9px;
 }
 
 @theme inline {
@@ -31,6 +33,8 @@
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --color-focus: var(--focus);
+  --radius-panel: var(--radius-panel);
+  --radius-control: var(--radius-control);
   --font-sans: "Pretendard", "Inter", "Noto Sans KR", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
