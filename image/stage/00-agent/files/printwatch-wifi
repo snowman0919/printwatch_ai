@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+src=/boot/firmware/printwatch-wifi.nmconnection
+dest=/etc/NetworkManager/system-connections/printwatch-wifi.nmconnection
+install -d -m 0700 /etc/NetworkManager/system-connections
+install -m 0600 "$src" "$dest"
+rm -f "$src"

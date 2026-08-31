@@ -89,6 +89,106 @@ class FlashTest(unittest.TestCase):
             self.assertEqual(result.returncode, 2)
             self.assertIn("URL-safe", result.stderr)
 
+    def test_writes_wifi_profile_when_ssid_provided(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            image = root / "image.img.xz"
+            image.write_bytes(b"verified image")
+            Path(f"{image}.sha256").write_text(f"{hashlib.sha256(image.read_bytes()).hexdigest()}  {image}\n")
+            boot = root / "boot"
+            boot.mkdir()
+            tools = root / "bin"
+            tools.mkdir()
+            (tools / "rpi-imager").write_text("#!/bin/sh\nexit 0\n")
+            (tools / "diskutil").write_text(
+                "#!/bin/sh\n"
+                "if [ \"$1\" = info ]; then printf 'Mount Point: %s\\n' \"$PRINTWATCH_TEST_BOOT\"; fi\n"
+            )
+            for tool in tools.iterdir():
+                tool.chmod(0o755)
+            psk = "correct horse battery"
+            environment = {
+                **os.environ,
+                "PATH": f"{tools}:{os.environ['PATH']}",
+                "PRINTWATCH_DEVICE_TOKEN": "a" * 24,
+                "PRINTWATCH_TEST_BOOT": str(boot),
+                "PRINTWATCH_WIFI_SSID": "DIMIGO-FAB",
+                "PRINTWATCH_WIFI_PSK": psk,
+            }
+            result = subprocess.run(
+                [FLASH, "printer-1", image, "/dev/disk-test"],
+                input="/dev/disk-test\n",
+                text=True,
+                capture_output=True,
+                env=environment,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            profile = (boot / "printwatch-wifi.nmconnection").read_text()
+            self.assertIn("ssid=DIMIGO-FAB", profile)
+            self.assertIn("key-mgmt=wpa-psk", profile)
+            self.assertIn("psk=" + psk, profile)
+            self.assertEqual((boot / "printwatch-wifi.nmconnection").stat().st_mode & 0o777, 0o600)
+            self.assertNotIn(psk, result.stdout)
+            self.assertNotIn(psk, result.stderr)
+
+    def test_omits_wifi_profile_without_ssid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            image = root / "image.img.xz"
+            image.write_bytes(b"verified image")
+            Path(f"{image}.sha256").write_text(f"{hashlib.sha256(image.read_bytes()).hexdigest()}  {image}\n")
+            boot = root / "boot"
+            boot.mkdir()
+            tools = root / "bin"
+            tools.mkdir()
+            (tools / "rpi-imager").write_text("#!/bin/sh\nexit 0\n")
+            (tools / "diskutil").write_text(
+                "#!/bin/sh\n"
+                "if [ \"$1\" = info ]; then printf 'Mount Point: %s\\n' \"$PRINTWATCH_TEST_BOOT\"; fi\n"
+            )
+            for tool in tools.iterdir():
+                tool.chmod(0o755)
+            result = subprocess.run(
+                [FLASH, "printer-1", image, "/dev/disk-test"],
+                input="/dev/disk-test\n",
+                text=True,
+                capture_output=True,
+                env={**os.environ, "PATH": f"{tools}:{os.environ['PATH']}", "PRINTWATCH_DEVICE_TOKEN": "a" * 24, "PRINTWATCH_TEST_BOOT": str(boot)},
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertFalse((boot / "printwatch-wifi.nmconnection").exists())
+
+    def test_rejects_short_wifi_psk_before_writer_runs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            image = root / "image.img.xz"
+            image.write_bytes(b"verified image")
+            Path(f"{image}.sha256").write_text(f"{hashlib.sha256(image.read_bytes()).hexdigest()}  {image}\n")
+            marker = root / "writer-ran"
+            tools = root / "bin"
+            tools.mkdir()
+            writer = tools / "rpi-imager"
+            writer.write_text(f"#!/bin/sh\ntouch '{marker}'\n")
+            writer.chmod(0o755)
+            result = subprocess.run(
+                [FLASH, "printer-1", image, "/dev/disk-test"],
+                text=True,
+                capture_output=True,
+                env={
+                    **os.environ,
+                    "PATH": f"{tools}:{os.environ['PATH']}",
+                    "PRINTWATCH_DEVICE_TOKEN": "a" * 24,
+                    "PRINTWATCH_WIFI_SSID": "DIMIGO-FAB",
+                    "PRINTWATCH_WIFI_PSK": "short",
+                },
+                check=False,
+            )
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("8-63", result.stderr)
+            self.assertFalse(marker.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

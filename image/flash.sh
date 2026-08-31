@@ -18,6 +18,17 @@ expected_checksum=$(awk 'NR == 1 { print $1 }' "$checksum_file")
 actual_checksum=$(openssl dgst -sha256 -r "$image" | awk '{ print $1 }')
 [[ "$expected_checksum" =~ ^[0-9a-fA-F]{64}$ && "$actual_checksum" == "$expected_checksum" ]] || { echo "Image checksum mismatch" >&2; exit 1; }
 
+wifi_ssid=${PRINTWATCH_WIFI_SSID:-}
+wifi_psk=${PRINTWATCH_WIFI_PSK:-}
+if [[ -n "$wifi_ssid" ]]; then
+  [[ ${#wifi_ssid} -le 32 && "$wifi_ssid" != *[[:cntrl:]]* && "$wifi_ssid" != *'"'* && "$wifi_ssid" != *'\'* ]] || { echo "PRINTWATCH_WIFI_SSID must be 1-32 characters without quotes, backslashes or control characters" >&2; exit 2; }
+  if [[ -z "$wifi_psk" ]]; then
+    read -r -s -p "Wi-Fi password (input hidden): " wifi_psk
+    echo
+  fi
+  [[ ${#wifi_psk} -ge 8 && ${#wifi_psk} -le 63 && "$wifi_psk" != *[[:cntrl:]]* && "$wifi_psk" != *'"'* ]] || { echo "PRINTWATCH_WIFI_PSK must be 8-63 characters without quotes or control characters" >&2; exit 2; }
+fi
+
 echo "This will overwrite $device with $image for $printer_id."
 read -r -p "Type the exact device path to continue: " confirmation
 [[ "$confirmation" == "$device" ]] || { echo "Cancelled"; exit 1; }
@@ -35,6 +46,10 @@ fi
 [[ -d "$mount_point" ]] || { echo "Could not mount boot partition" >&2; exit 1; }
 umask 077
 printf 'PRINTWATCH_SERVER_URL="https://3dp.kotori9.run"\nPRINTWATCH_PRINTER_ID="%s"\nPRINTWATCH_DEVICE_TOKEN="%s"\nPRINTWATCH_LIVE_INTERVAL="1"\nPRINTWATCH_OLED_ADDRESS="0x3C"\nPRINTWATCH_SERIAL_DEVICE="auto"\n' "$printer_id" "$token" > "$mount_point/printwatch.env"
+if [[ -n "$wifi_ssid" ]]; then
+  printf '[connection]\nid=printwatch\ntype=wifi\n\n[wifi]\nmode=infrastructure\nssid=%s\n\n[wifi-security]\nkey-mgmt=wpa-psk\npsk=%s\n\n[ipv4]\nmethod=auto\n\n[ipv6]\nmethod=auto\n' "$wifi_ssid" "$wifi_psk" > "$mount_point/printwatch-wifi.nmconnection"
+  chmod 600 "$mount_point/printwatch-wifi.nmconnection"
+fi
 sync
 if command -v diskutil >/dev/null; then diskutil unmountDisk "$device" >/dev/null; else udisksctl unmount -b "$boot_device" >/dev/null; fi
 echo "Ready: insert the card, connect camera/OLED/Ethernet, then power on."

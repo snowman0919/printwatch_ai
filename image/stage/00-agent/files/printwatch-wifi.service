@@ -1,0 +1,12 @@
+[Unit]
+Description=PrintWatch Wi-Fi profile installer
+ConditionPathExists=/boot/firmware/printwatch-wifi.nmconnection
+After=local-fs.target
+Before=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/printwatch-wifi
+
+[Install]
+WantedBy=multi-user.target
