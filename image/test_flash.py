@@ -160,6 +160,45 @@ class FlashTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertFalse((boot / "printwatch-wifi.nmconnection").exists())
 
+    def test_prompts_for_ssid_with_wifi_flag(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            image = root / "image.img.xz"
+            image.write_bytes(b"verified image")
+            Path(f"{image}.sha256").write_text(f"{hashlib.sha256(image.read_bytes()).hexdigest()}  {image}\n")
+            boot = root / "boot"
+            boot.mkdir()
+            tools = root / "bin"
+            tools.mkdir()
+            (tools / "rpi-imager").write_text("#!/bin/sh\nexit 0\n")
+            (tools / "diskutil").write_text(
+                "#!/bin/sh\n"
+                "if [ \"$1\" = info ]; then printf 'Mount Point: %s\\n' \"$PRINTWATCH_TEST_BOOT\"; fi\n"
+            )
+            for tool in tools.iterdir():
+                tool.chmod(0o755)
+            psk = "correct horse battery"
+            result = subprocess.run(
+                [FLASH, "--wifi", "printer-3", image, "/dev/disk-test"],
+                input="DIMIGO-FAB\n/dev/disk-test\n",
+                text=True,
+                capture_output=True,
+                env={
+                    **os.environ,
+                    "PATH": f"{tools}:{os.environ['PATH']}",
+                    "PRINTWATCH_DEVICE_TOKEN": "a" * 24,
+                    "PRINTWATCH_TEST_BOOT": str(boot),
+                    "PRINTWATCH_WIFI_PSK": psk,
+                },
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            profile = (boot / "printwatch-wifi.nmconnection").read_text()
+            self.assertIn("ssid=DIMIGO-FAB", profile)
+            self.assertIn("psk=" + psk, profile)
+            config = (boot / "printwatch.env").read_text()
+            self.assertIn('PRINTWATCH_PRINTER_ID="printer-3"', config)
+
     def test_rejects_short_wifi_psk_before_writer_runs(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-usage() { echo "Usage: PRINTWATCH_DEVICE_TOKEN=... $0 <printer-1|printer-2|printer-3> <image.img.xz> <device>" >&2; exit 2; }
+usage() { echo "Usage: PRINTWATCH_DEVICE_TOKEN=... $0 [--wifi] <printer-1|printer-2|printer-3> <image.img.xz> <device>" >&2; exit 2; }
+wifi_requested=0
+if [[ "${1:-}" == "--wifi" ]]; then
+  wifi_requested=1
+  shift
+fi
 [[ $# -eq 3 ]] || usage
 printer_id=$1
 image=$2
@@ -20,6 +25,11 @@ actual_checksum=$(openssl dgst -sha256 -r "$image" | awk '{ print $1 }')
 
 wifi_ssid=${PRINTWATCH_WIFI_SSID:-}
 wifi_psk=${PRINTWATCH_WIFI_PSK:-}
+if [[ "$wifi_requested" -eq 1 ]]; then
+  if [[ -z "$wifi_ssid" ]]; then
+    read -r -p "Wi-Fi SSID: " wifi_ssid
+  fi
+fi
 if [[ -n "$wifi_ssid" ]]; then
   [[ ${#wifi_ssid} -le 32 && "$wifi_ssid" != *[[:cntrl:]]* && "$wifi_ssid" != *'"'* && "$wifi_ssid" != *'\'* ]] || { echo "PRINTWATCH_WIFI_SSID must be 1-32 characters without quotes, backslashes or control characters" >&2; exit 2; }
   if [[ -z "$wifi_psk" ]]; then
