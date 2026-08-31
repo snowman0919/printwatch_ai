@@ -11,6 +11,13 @@ PRINTWATCH_DEVICE_TOKEN='<printer-1의 서버 token>' \
   ./image/flash.sh printer-1 image_2026-08-28-printwatch-pi4.img.xz /dev/diskN
 ```
 
+유선 Ethernet 대신 WPA2-Personal Wi-Fi를 사용하려면 `PRINTWATCH_WIFI_SSID`를 함께 넣습니다. 비밀번호는 히든 프롬프트로 입력되며 부팅 파티션의 mode 600 프로파일이 첫 부팅에 NetworkManager로 이동됩니다.
+
+```bash
+PRINTWATCH_DEVICE_TOKEN='<printer-1의 서버 token>' PRINTWATCH_WIFI_SSID='<SSID>' \
+  ./image/flash.sh printer-1 image_2026-08-28-printwatch-pi4.img.xz /dev/diskN
+```
+
 스크립트가 표시한 장치 경로와 실제 SD 카드가 같은지 확인한 뒤 정확한 경로를 다시 입력합니다. 첫 부팅은 설정 이동과 패키지 초기화 때문에 평소보다 오래 걸릴 수 있습니다.
 
 ## 2. Pi 로컬 경계
