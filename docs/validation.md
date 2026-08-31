@@ -49,12 +49,12 @@ Local evidence paths (generated, not committed):
 
 The pinned official `pi-gen` ARM64 path completed on the x86_64 `dev` host through registered QEMU emulation. The resulting Raspberry Pi OS Trixie image passed `xz -t`:
 
-- Image: `image_2026-08-28-printwatch-pi4.img.xz`
-- Checksum: `image_2026-08-28-printwatch-pi4.img.xz.sha256`
-- Size: 744,203,912 bytes
-- SHA-256: `ae2c709a38b9714c1d1bdf8d728926dcb599d3ea0c0a0a750acfd89211517748`
+- Image: `image_2026-08-31-printwatch-pi4.img.xz`
+- Checksum: `image_2026-08-31-printwatch-pi4.img.xz.sha256`
+- Size: 747,839,396 bytes
+- SHA-256: `0c5345052496bc69823e3251a2fdf0e4bd1d8de5a13bb8f7f20676dba6fffa2d`
 
-Inside the rebuilt rootfs, the ARM64 Python runtime successfully imported `aiohttp`, `luma.oled`, `serial`, `picamera2`, `printwatch.config`, and `printwatch.telemetry`. Both `printwatch-firstboot.service` and `printwatch-agent.service` were enabled, the current URL-safe token validation and persistent serial connection were present, application WebRTC imports were absent, and `dtparam=i2c_arm=on` was set. Executing the actual first-boot program against a seven-line configuration containing a shell command rejected the file before installing it and did not execute the command. This validates construction, runtime linkage, and the boot-configuration trust boundary; camera capture, OLED output, Ethernet boot, and printer serial telemetry still require the [physical commissioning procedure](commissioning.md) on a Pi 4.
+Inside the rebuilt rootfs, the ARM64 Python runtime successfully imported `aiohttp`, `luma.oled`, `serial`, `picamera2`, `printwatch.config`, and `printwatch.telemetry`. The `printwatch-firstboot.service`, `printwatch-wifi.service` (moves a flash-time WPA2 profile into NetworkManager on first boot), and `printwatch-agent.service` were enabled, the current URL-safe token validation and persistent serial connection were present, application WebRTC imports were absent, and `dtparam=i2c_arm=on` was set. Executing the actual first-boot program against a seven-line configuration containing a shell command rejected the file before installing it and did not execute the command. This validates construction, runtime linkage, and the boot-configuration trust boundary; camera capture, OLED output, Ethernet boot, and printer serial telemetry still require the [physical commissioning procedure](commissioning.md) on a Pi 4.
 
 ### Printable housing
 
