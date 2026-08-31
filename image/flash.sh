@@ -23,12 +23,12 @@ select_device() {
     while IFS= read -r d; do
       info=$(diskutil info "$d" 2>/dev/null) || continue
       protocol=$(sed -n 's/^[[:space:]]*Protocol: *//p' <<< "$info")
-      internal=$(sed -n 's/^[[:space:]]*Internal: *//p' <<< "$info")
+      internal=$(sed -n 's/^[[:space:]]*Device Location: *//p' <<< "$info")
       removable=$(sed -n 's/^[[:space:]]*Removable Media: *//p' <<< "$info")
       [[ "$protocol" == "Disk Image" ]] && continue
-      [[ "$internal" == "Yes" && "$removable" != Removable* ]] && continue
+      [[ "$internal" == "Internal" && "$removable" != Removable* ]] && continue
       name=$(sed -n 's/^[[:space:]]*Device \/ Media Name: *//p' <<< "$info")
-      bytes=$(sed -n 's/^[[:space:]]*Disk Size: .*(\([0-9][0-9]*\) bytes)/\1/p' <<< "$info")
+      bytes=$(sed -n 's/^[[:space:]]*Disk Size: [^(]*(\([0-9][0-9]*\) [Bb]ytes.*/\1/p' <<< "$info")
       [[ -n "$bytes" ]] || continue
       nodes+=("$d"); names+=("$name"); sizes+=("$bytes")
     done < <(diskutil list | sed -n 's#^\(/dev/disk[0-9]*\) (.*#\1#p')

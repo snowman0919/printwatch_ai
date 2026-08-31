@@ -214,10 +214,10 @@ class FlashTest(unittest.TestCase):
                 "#!/bin/sh\n"
                 'if [ "$1" = list ]; then printf "/dev/disk9 (external, physical):\\n"; exit 0; fi\n'
                 'if [ "$2" = /dev/disk9 ]; then\n'
-                "  printf '   Device / Media Name: SD/MMC\\n'\n"
-                "  printf '   Disk Size: 31.9 GB (31914983424 bytes)\\n'\n"
+                "  printf '   Device / Media Name: Built In SDXC Reader\\n'\n"
+                "  printf '   Disk Size: 31.9 GB (31914983424 Bytes) (exactly 62333952 512-Byte-Units)\\n'\n"
                 "  printf '   Protocol: Secure Digital\\n'\n"
-                "  printf '   Internal: Yes\\n'\n"
+                "  printf '   Device Location: Internal\\n'\n"
                 "  printf '   Removable Media: Removable\\n'\n"
                 "  exit 0\n"
                 "fi\n"
@@ -245,7 +245,7 @@ class FlashTest(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("[1] /dev/disk9", result.stdout)
-            self.assertIn("SD/MMC", result.stdout)
+            self.assertIn("Built In SDXC Reader", result.stdout)
             self.assertIn("31.9 GB", result.stdout)
             config = (boot / "printwatch.env").read_text()
             self.assertIn('PRINTWATCH_PRINTER_ID="printer-1"', config)
