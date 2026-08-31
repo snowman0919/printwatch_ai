@@ -2,33 +2,34 @@
 
 PrintWatch AI has three runtime layers.
 
-## Raspberry Pi Layer
+## Raspberry Pi layer
 
-Each Raspberry Pi 3 owns exactly one Ender-3 V3 SE. The agent captures from Raspberry Pi Camera Module V1 at 1920x1080 every 5 minutes, writes a local original, creates thumbnail and AI-sized JPEGs, crops the LCD region, runs OCR, computes local image signals, and uploads through `uploadSnapshot`.
+Each Raspberry Pi 4 owns exactly one Ender-3 V3 SE. The agent captures from a Raspberry Pi Camera Module 2, writes a local original snapshot every 15 seconds, and uploads a near-live JPEG every second (configurable 0.5–10 s). A 0.96-inch I2C OLED at address `0x3C` shows the device ID and connection state. Printer state (progress, temperatures, serial connection) is polled over USB serial; the port is opened once and kept for the agent's lifetime, reconnecting only after an I/O error so RTS/DTR transitions never reset the printer board.
 
-The Pi does not know the OpenAI API key and does not control the printer.
+The agent authenticates with a Bearer device token, knows nothing about Clerk or the vision model, and never sends control commands to the printer.
 
-## Firebase Layer
+## Server layer
 
-Firebase is the full backend:
+The Next.js server runs in Docker Compose on the `dev` host, published only on `127.0.0.1:3300` behind the existing host systemd `cloudflared` tunnel (`https://3dp.kotori9.run` → `http://127.0.0.1:3300`).
 
-- Auth: Google sign-in, accepted domain `@dimigo.hs.kr`.
-- Firestore: live dashboard data, alerts, feedback, WebRTC signaling.
-- Storage: original, thumbnail, and AI images.
-- Functions: snapshot ingest, AI analysis, notifications, cleanup, offline status.
-- FCM: push notifications for suspected or critical failures.
+- Device APIs: `POST /api/device/snapshot` (original + telemetry + optional analysis request) and `POST /api/device/frame` (1 FPS live JPEG, one stored per printer), both authenticated by `DEVICE_TOKENS_JSON`.
+- App APIs: dashboard state, latest media, and live media polling, authenticated through Clerk.
+- Persistence: SQLite under the `/data` volume, running as an unprivileged container user.
+- Vision analysis: the stored snapshot is kept intact while a normalized 720 px JPEG copy is sent to Ollama (`Qwythos-v2-9B:Q4`). The JSON verdict (`normal` / `suspected` / `failed` / `unknown`) is schema-adapted from observed model behavior and inference is bounded to 90 seconds; snapshot uploads always return 200 even when analysis fails.
+- Access control: Clerk production is invite-only with custom Google OAuth credentials on `clerk.kotori9.run`. The server additionally requires an exact `@dimigo.hs.kr` primary email and a verified `oauth_google` external account carrying that same address.
 
-## Flutter Layer
+## Dashboard layer
 
-The Flutter app is view-only. It streams Firestore dashboard data, shows current and historical images, registers FCM tokens, writes feedback, and starts WebRTC viewer sessions. Printer cards are sorted by severity: failed, suspected, unknown, offline, normal.
+The dashboard is a dark, flat operations console. It renders one focal camera per printer, the fleet rail, AI verdicts with failure probability, and telemetry. Live video is the `NEAR LIVE · 1 FPS` latest-JPEG poll — there is no WebRTC/aiortc path and no Cloudflare Realtime/TURN dependency. Stale polling degrades into an offline state rather than a separate banner. The UI is view-only; no printer control path exists anywhere.
 
-## Data Flow
+## Data flow
 
-1. Pi captures image and metadata.
-2. Pi signs upload with HMAC and calls `uploadSnapshot`.
-3. Function stores images in Storage and creates `snapshots/{snapshotId}`.
-4. `onSnapshotUploaded` updates `printers/{printerId}` and job progress.
-5. Suspicious local signals trigger immediate AI; otherwise `scheduledAiAnalysis` runs every 30 minutes.
-6. AI results are written to `aiAnalyses`; printer status and print job progress are updated.
-7. Alerts create FCM notifications with cooldown.
-8. Flutter receives Firestore updates in near real time.
+1. The Pi agent uploads a near-live frame every second and an original snapshot with telemetry every 15 seconds.
+2. The server validates the device token, stores the image, and updates printer state.
+3. When analysis is requested, the server normalizes the snapshot, sends a 720 px copy to Qwythos, and adapts the JSON verdict to the dashboard schema.
+4. Invited `@dimigo.hs.kr` users open the dashboard, which reads per-printer state, verdicts, and the latest live JPEG over the Cloudflare tunnel.
+5. `main` pushes trigger the `Deploy production` GitHub Actions workflow on the `printwatch-deploy` self-hosted runner, which deploys the committed archive only and verifies both container and public health.
+
+## Legacy reference
+
+The discarded Firebase/Flutter MVP (Firestore, Cloud Functions, HMAC `uploadSnapshot`, FCM, Flutter apps) is kept under `app/`, `functions/`, `firebase/`, and `pi_agent/` for reference only. The current system does not use any of it.

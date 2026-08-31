@@ -1,109 +1,47 @@
 # PrintWatch AI
 
-PrintWatch AI is an MVP monitoring system for a school club running five stock Ender-3 V3 SE printers. It is view-only: it does not send G-code, pause, stop, cancel, or otherwise control printers.
+PrintWatch AI monitors three stock Ender-3 V3 SE printers for a school club. It is view-only: the Pi agents send status queries, but the system never sends G-code, pause, stop, cancel, or any other printer control command.
 
 ## Architecture
 
-- Five Raspberry Pi 3 devices each monitor exactly one printer with a Raspberry Pi Camera Module V1.
-- The Pi agent captures a 1920x1080 original snapshot every 5 minutes, creates a thumbnail and a 512-768px AI image, runs LCD OCR, computes local suspicion signals, and uploads through a HMAC-authenticated Cloud Function.
-- Firebase is the full server backend: Firebase Auth, Firestore, Cloud Storage, Cloud Functions, and FCM.
-- Cloud Functions update printer state, run GPT-5-nano vision analysis every 30 minutes or sooner when local signals are suspicious, create alerts, send FCM notifications, clean 7-day images, and mark stale printers offline after 10 minutes.
-- Flutter targets Android and iOS for APK and TestFlight internal testing.
-- Live streaming is a separate WebRTC P2P screen using Firestore signaling. The Pi aiortc path is included as a skeleton; the app also has a mock stream mode.
+- Three Raspberry Pi 4 devices each monitor exactly one Ender-3 V3 SE with a Raspberry Pi Camera Module 2, a 0.96-inch I2C OLED, and a USB serial link to the printer.
+- The Python Pi agent captures an original snapshot every 15 seconds, uploads a near-live JPEG every 1 second, streams OLED status over I2C (`0x3C`), and polls printer telemetry over a persistent serial connection that reconnects only after an error (avoiding repeated RTS/DTR resets).
+- The Next.js server runs in Docker on the `dev` host at `127.0.0.1:3300`. It stores originals and per-printer live JPEGs in SQLite-backed volumes, checks Bearer device tokens from `DEVICE_TOKENS_JSON`, and exposes the dashboard APIs.
+- Clerk production provides Google sign-in. Access is invite-only, and the server additionally requires an exact `@dimigo.hs.kr` primary email backed by a verified Google external account (`oauth_google`) with the same address.
+- Vision analysis runs through Ollama (`Qwythos-v2-9B:Q4` at `http://100.90.167.128:11434/v1`). The stored snapshot is never modified; a 720 px JPEG copy is sent to the model, and inference is bounded to 90 seconds so uploads always succeed even when analysis fails.
+- The public endpoint is `https://3dp.kotori9.run`, served by the existing host-level systemd `cloudflared` tunnel with origin `http://127.0.0.1:3300`. There is no WebRTC/aiortc path and no Cloudflare Realtime/TURN subscription; near-live video is the 1 FPS latest-JPEG poll.
 
 ## Repository
 
-- `app/flutter_app`: Flutter app.
-- `functions`: Firebase Cloud Functions TypeScript project.
-- `pi_agent`: Python Raspberry Pi capture/upload agent and aiortc peer skeleton.
-- `firebase`: Firestore, Storage, and Firebase config files.
-- `docs`: setup, architecture, OpenAI, WebRTC, and MVP test plan.
+- `web`: Next.js dashboard, Clerk integration, device APIs, and Qwythos analysis.
+- `agent`: Python Pi agent (camera, OLED, serial telemetry, uploader) and its tests.
+- `image`: official `pi-gen` ARM64 image build and SD-card flash scripts.
+- `hardware/freecad`: FreeCAD script and generated STL/STEP for the printable housing (six parts).
+- `deploy`: environment preflight, deploy script, and the self-hosted Actions runner service.
+- `docs`: production setup, architecture, commissioning, and validation evidence.
 
-## Setup Summary
+The discarded Firebase/Flutter MVP remains only as reference under `app/`, `functions/`, `firebase/`, and `pi_agent/`. Nothing in the current system depends on it.
 
-1. Create a Firebase project and enable Auth, Firestore, Storage, Functions, and FCM.
-2. Enable Google Sign-In and restrict operational access to `@dimigo.hs.kr` through app logic, Functions validation, and rules.
-3. Replace `app/flutter_app/lib/firebase_options.dart` placeholders or run FlutterFire CLI.
-4. Deploy rules from `firebase/` and functions from `functions/`.
-5. Set Function env vars:
-   - `OPENAI_API_KEY`
-   - `PI_DEVICE_SECRETS_JSON`, for example `{"pi-printer-1":"long-random-secret"}`
-6. Install the Pi agent on each Raspberry Pi and set a unique config/device secret.
-7. Run the Flutter app on Android or iOS.
+## Quick paths
 
-## Flutter
+1. Configure Clerk and Cloudflare secrets in `dev:/home/kotori9/printwatch_ai/.env` per [docs/setup.md](docs/setup.md).
+2. Deploy to `dev` with `./deploy/deploy.sh`, or push to `main` to trigger the `Deploy production` GitHub Actions workflow on the `printwatch-deploy` self-hosted runner.
+3. Build the common Raspberry Pi OS image once with `./image/build-image.sh`; it writes the image plus a `.sha256` sidecar.
+4. Flash each SD card with `PRINTWATCH_DEVICE_TOKEN=... ./image/flash.sh printer-1 image_2026-08-28-printwatch-pi4.img.xz /dev/diskN` (the script verifies the checksum before writing).
+5. Print the housing per [hardware/freecad/README.md](hardware/freecad/README.md).
+6. Commission the first set per [docs/commissioning.md](docs/commissioning.md), then replicate for the remaining two printers.
 
-```bash
-cd app/flutter_app
-flutter pub get
-flutter run
-```
+## Security model
 
-For Android APK:
+- Users sign in with Google through Clerk production, which is invite-only; unsolicited sign-ups are rejected.
+- Beyond Clerk, every protected server boundary requires an exact `@dimigo.hs.kr` primary email plus a verified `oauth_google` external account carrying the same address.
+- Pi devices authenticate with unique URL-safe device tokens (24+ characters) injected at flash time and validated by the server preflight; tokens are never printed or logged.
+- Clerk publishable keys cross the Docker build boundary into the browser bundle; the secret key, device tokens, and any tunnel credentials stay runtime-only in the mode-600 `.env`.
+- Printers are never controlled: the agent only reads status, and the web server exposes no command path.
 
-```bash
-flutter build apk --release
-```
+## Cost and operations control
 
-For TestFlight, open the generated iOS project in Xcode after Firebase iOS setup and archive with the club Apple developer account.
-
-## Firebase Functions
-
-```bash
-cd functions
-npm install
-npm run build
-firebase deploy --only functions
-```
-
-The Pi upload path is `uploadSnapshot`. Flutter never receives the OpenAI key, and Pi devices never receive it.
-
-## Raspberry Pi
-
-```bash
-cd pi_agent
-scripts/install_pi.sh
-export PRINTWATCH_DEVICE_SECRET="secret-from-functions-env"
-scripts/run_agent.sh config/printer_1.json
-```
-
-Each Pi uses one config file and one printer ID: `Printer-1` through `Printer-5`.
-
-## Firestore Schema
-
-The MVP implements the requested top-level collections:
-
-- `users/{uid}`
-- `printers/{printerId}`
-- `printJobs/{jobId}`
-- `snapshots/{snapshotId}`
-- `aiAnalyses/{analysisId}`
-- `alerts/{alertId}`
-- `feedback/{feedbackId}`
-- `deviceTokens/{tokenId}`
-- `webrtcSessions/{sessionId}` with caller/callee candidate subcollections
-
-## Security Model
-
-- Flutter users must be authenticated with a `@dimigo.hs.kr` Google account.
-- Users can read only printers in `allowedPrinters`, unless their role is `admin`.
-- Flutter can write feedback, its own FCM token, and its own WebRTC caller signaling.
-- Flutter cannot write snapshots, AI analyses, alerts, printer state, or print jobs.
-- Pi devices upload only through the HMAC Cloud Function endpoint.
-- Cloud Functions perform privileged state changes.
-
-## Cost Control
-
-- Dashboard images update every 5 minutes, but AI analysis runs every 30 minutes by default.
-- Local OpenCV heuristics trigger earlier AI only when suspicious.
-- OpenAI receives smaller AI images, preferably 512px or 768px wide, not 1920x1080 originals.
-- GPT-5-nano is used for low-cost vision analysis.
-- Images and snapshot docs are cleaned after 7 days.
-- Alert notifications have a 30-minute cooldown for the same printer and failure type.
-
-## MVP Limitations
-
-- Firebase config placeholders must be replaced before running against a real project.
-- Pi WebRTC on Raspberry Pi 3 may require tuning and native package work; default target is 640x480 at 2 fps.
-- OCR accuracy depends on LCD crop calibration and lighting.
-- The app is intentionally view-only and does not integrate with OctoPrint, Klipper, or printer firmware APIs.
+- AI analysis sends a 720 px JPEG copy, not the 1920x1080 original, to bound inference latency.
+- Only one live JPEG per printer is stored; older frames are replaced on the next 1-second upload.
+- Docker logs rotate at 10 MB × 3 files, and the container runs as an unprivileged user with a healthcheck.
+- Deployment ships only committed sources; untracked files and the remote `.env` are preserved.
