@@ -250,6 +250,48 @@ class FlashTest(unittest.TestCase):
             config = (boot / "printwatch.env").read_text()
             self.assertIn('PRINTWATCH_PRINTER_ID="printer-1"', config)
 
+    def test_config_only_writes_boot_configuration_without_image(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            boot = root / "boot"
+            boot.mkdir()
+            tools = root / "bin"
+            tools.mkdir()
+            (tools / "diskutil").write_text(
+                "#!/bin/sh\n"
+                'if [ "$1" = list ]; then printf "/dev/disk9 (external, physical):\\n"; exit 0; fi\n'
+                'if [ "$2" = /dev/disk9 ]; then\n'
+                "  printf '   Device / Media Name: Built In SDXC Reader\\n'\n"
+                "  printf '   Disk Size: 31.9 GB (31914983424 Bytes) (exactly 62333952 512-Byte-Units)\\n'\n"
+                "  printf '   Protocol: Secure Digital\\n'\n"
+                "  printf '   Device Location: Internal\\n'\n"
+                "  printf '   Removable Media: Removable\\n'\n"
+                "  exit 0\n"
+                "fi\n"
+                'if [ "$2" = /dev/disk9s1 ]; then printf "Mount Point: %s\\n" "$PRINTWATCH_TEST_BOOT"; fi\n'
+                "exit 0\n"
+            )
+            for tool in tools.iterdir():
+                tool.chmod(0o755)
+            result = subprocess.run(
+                [FLASH, "--config-only", "printer-2"],
+                input="1\n/dev/disk9\n",
+                text=True,
+                capture_output=True,
+                env={
+                    **os.environ,
+                    "PATH": f"{tools}:{os.environ['PATH']}",
+                    "PRINTWATCH_DEVICE_TOKEN": "a" * 24,
+                    "PRINTWATCH_TEST_BOOT": str(boot),
+                },
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            config = (boot / "printwatch.env").read_text()
+            self.assertIn('PRINTWATCH_PRINTER_ID="printer-2"', config)
+            self.assertEqual((boot / "printwatch.env").stat().st_mode & 0o777, 0o600)
+            self.assertFalse((boot / "printwatch-wifi.nmconnection").exists())
+
     def test_rejects_short_wifi_psk_before_writer_runs(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

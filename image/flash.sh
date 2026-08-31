@@ -1,20 +1,33 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-usage() { echo "Usage: PRINTWATCH_DEVICE_TOKEN=... $0 [--wifi] <printer-1|printer-2|printer-3> <image.img.xz> [device]" >&2; echo "  Omit device to pick from connected storage." >&2; exit 2; }
+usage() { echo "Usage: PRINTWATCH_DEVICE_TOKEN=... $0 [--wifi] [--config-only] <printer-1|printer-2|printer-3> [image.img.xz] [device]" >&2; echo "  --config-only writes the boot configuration to an already-flashed card." >&2; echo "  Omit device to pick from connected storage." >&2; exit 2; }
+config_only=0
 wifi_requested=0
-if [[ "${1:-}" == "--wifi" ]]; then
-  wifi_requested=1
+while [[ "${1:-}" == --* ]]; do
+  case "$1" in
+    --wifi) wifi_requested=1 ;;
+    --config-only) config_only=1 ;;
+    *) usage ;;
+  esac
   shift
-fi
-[[ $# -eq 2 || $# -eq 3 ]] || usage
+done
+[[ $# -ge 1 && $# -le 3 ]] || usage
 printer_id=$1
-image=$2
-device=${3:-}
+if [[ "$config_only" -eq 1 ]]; then
+  image=${2:-}
+  device=${3:-}
+else
+  [[ $# -ge 2 ]] || usage
+  image=$2
+  device=${3:-}
+fi
 token=${PRINTWATCH_DEVICE_TOKEN:-}
 [[ "$printer_id" =~ ^printer-[1-3]$ ]] || usage
-[[ -f "$image" ]] || { echo "Image not found: $image" >&2; exit 2; }
 [[ "$token" =~ ^[A-Za-z0-9_-]{24,}$ ]] || { echo "PRINTWATCH_DEVICE_TOKEN must be at least 24 URL-safe characters" >&2; exit 2; }
+if [[ "$config_only" -eq 0 ]]; then
+  [[ -n "$image" && -f "$image" ]] || { echo "Image not found: $image" >&2; exit 2; }
+fi
 
 select_device() {
   local -a nodes=() names=() sizes=()
@@ -60,12 +73,14 @@ if [[ -z "$device" ]]; then
   select_device
 fi
 [[ "$device" != "/" && "$device" != "/dev" && "$device" == /dev/* ]] || { echo "Refusing unsafe device path" >&2; exit 2; }
-checksum_file="$image.sha256"
-[[ -f "$checksum_file" ]] || { echo "Checksum not found: $checksum_file" >&2; exit 2; }
-command -v openssl >/dev/null || { echo "OpenSSL is required" >&2; exit 2; }
-expected_checksum=$(awk 'NR == 1 { print $1 }' "$checksum_file")
-actual_checksum=$(openssl dgst -sha256 -r "$image" | awk '{ print $1 }')
-[[ "$expected_checksum" =~ ^[0-9a-fA-F]{64}$ && "$actual_checksum" == "$expected_checksum" ]] || { echo "Image checksum mismatch" >&2; exit 1; }
+if [[ "$config_only" -eq 0 ]]; then
+  checksum_file="$image.sha256"
+  [[ -f "$checksum_file" ]] || { echo "Checksum not found: $checksum_file" >&2; exit 2; }
+  command -v openssl >/dev/null || { echo "OpenSSL is required" >&2; exit 2; }
+  expected_checksum=$(awk 'NR == 1 { print $1 }' "$checksum_file")
+  actual_checksum=$(openssl dgst -sha256 -r "$image" | awk '{ print $1 }')
+  [[ "$expected_checksum" =~ ^[0-9a-fA-F]{64}$ && "$actual_checksum" == "$expected_checksum" ]] || { echo "Image checksum mismatch" >&2; exit 1; }
+fi
 
 wifi_ssid=${PRINTWATCH_WIFI_SSID:-}
 wifi_psk=${PRINTWATCH_WIFI_PSK:-}
@@ -83,11 +98,17 @@ if [[ -n "$wifi_ssid" ]]; then
   [[ ${#wifi_psk} -ge 8 && ${#wifi_psk} -le 63 && "$wifi_psk" != *[[:cntrl:]]* && "$wifi_psk" != *'"'* ]] || { echo "PRINTWATCH_WIFI_PSK must be 8-63 characters without quotes or control characters" >&2; exit 2; }
 fi
 
-echo "This will overwrite $device with $image for $printer_id."
+if [[ "$config_only" -eq 1 ]]; then
+  echo "This will write the PrintWatch boot configuration to $device for $printer_id."
+else
+  echo "This will overwrite $device with $image for $printer_id."
+fi
 read -r -p "Type the exact device path to continue: " confirmation
 [[ "$confirmation" == "$device" ]] || { echo "Cancelled"; exit 1; }
-command -v rpi-imager >/dev/null || { echo "Install Raspberry Pi Imager CLI first" >&2; exit 2; }
-rpi-imager --cli "$image" "$device"
+if [[ "$config_only" -eq 0 ]]; then
+  command -v rpi-imager >/dev/null || { echo "Install Raspberry Pi Imager CLI first" >&2; exit 2; }
+  rpi-imager --cli "$image" "$device"
+fi
 
 if command -v diskutil >/dev/null; then
   boot_device="${device}s1"
