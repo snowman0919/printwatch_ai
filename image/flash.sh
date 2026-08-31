@@ -1,20 +1,64 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-usage() { echo "Usage: PRINTWATCH_DEVICE_TOKEN=... $0 [--wifi] <printer-1|printer-2|printer-3> <image.img.xz> <device>" >&2; exit 2; }
+usage() { echo "Usage: PRINTWATCH_DEVICE_TOKEN=... $0 [--wifi] <printer-1|printer-2|printer-3> <image.img.xz> [device]" >&2; echo "  Omit device to pick from connected storage." >&2; exit 2; }
 wifi_requested=0
 if [[ "${1:-}" == "--wifi" ]]; then
   wifi_requested=1
   shift
 fi
-[[ $# -eq 3 ]] || usage
+[[ $# -eq 2 || $# -eq 3 ]] || usage
 printer_id=$1
 image=$2
-device=$3
+device=${3:-}
 token=${PRINTWATCH_DEVICE_TOKEN:-}
 [[ "$printer_id" =~ ^printer-[1-3]$ ]] || usage
 [[ -f "$image" ]] || { echo "Image not found: $image" >&2; exit 2; }
 [[ "$token" =~ ^[A-Za-z0-9_-]{24,}$ ]] || { echo "PRINTWATCH_DEVICE_TOKEN must be at least 24 URL-safe characters" >&2; exit 2; }
+
+select_device() {
+  local -a nodes=() names=() sizes=()
+  if command -v diskutil >/dev/null; then
+    local d info protocol internal removable name bytes
+    while IFS= read -r d; do
+      info=$(diskutil info "$d" 2>/dev/null) || continue
+      protocol=$(sed -n 's/^[[:space:]]*Protocol: *//p' <<< "$info")
+      internal=$(sed -n 's/^[[:space:]]*Internal: *//p' <<< "$info")
+      removable=$(sed -n 's/^[[:space:]]*Removable Media: *//p' <<< "$info")
+      [[ "$protocol" == "Disk Image" ]] && continue
+      [[ "$internal" == "Yes" && "$removable" != Removable* ]] && continue
+      name=$(sed -n 's/^[[:space:]]*Device \/ Media Name: *//p' <<< "$info")
+      bytes=$(sed -n 's/^[[:space:]]*Disk Size: .*(\([0-9][0-9]*\) bytes)/\1/p' <<< "$info")
+      [[ -n "$bytes" ]] || continue
+      nodes+=("$d"); names+=("$name"); sizes+=("$bytes")
+    done < <(diskutil list | sed -n 's#^\(/dev/disk[0-9]*\) (.*#\1#p')
+  else
+    local node rm bytes
+    while IFS=' ' read -r node rm bytes; do
+      [[ "$rm" == "1" ]] || continue
+      nodes+=("/dev/$node"); names+=("$node"); sizes+=("$bytes")
+    done < <(lsblk -dnr -b -o NAME,RM,SIZE 2>/dev/null)
+  fi
+  [[ ${#nodes[@]} -gt 0 ]] || { echo "No writable storage device found. Insert the SD card and try again." >&2; exit 1; }
+  echo "Connected storage devices:"
+  local i
+  for i in "${!nodes[@]}"; do
+    local gb marker=""
+    gb=$(awk -v b="${sizes[$i]}" 'BEGIN { printf "%.1f", b / 1000000000 }')
+    if (( ${sizes[$i]} >= 200000000000 )); then
+      marker="  WARNING: >= 200 GB - confirm this is the right device"
+    fi
+    printf '  [%d] %-12s %-24s %8s GB%s\n' "$((i + 1))" "${nodes[$i]}" "${names[$i]}" "$gb" "$marker"
+  done
+  local pick
+  read -r -p "Select the target device number [1-${#nodes[@]}]: " pick
+  [[ "$pick" =~ ^[0-9]+$ && "$pick" -ge 1 && "$pick" -le ${#nodes[@]} ]] || { echo "Invalid selection" >&2; exit 1; }
+  device=${nodes[$((pick - 1))]}
+}
+
+if [[ -z "$device" ]]; then
+  select_device
+fi
 [[ "$device" != "/" && "$device" != "/dev" && "$device" == /dev/* ]] || { echo "Refusing unsafe device path" >&2; exit 2; }
 checksum_file="$image.sha256"
 [[ -f "$checksum_file" ]] || { echo "Checksum not found: $checksum_file" >&2; exit 2; }
@@ -47,11 +91,23 @@ rpi-imager --cli "$image" "$device"
 
 if command -v diskutil >/dev/null; then
   boot_device="${device}s1"
-  diskutil mount "$boot_device" >/dev/null
-  mount_point=$(diskutil info "$boot_device" | awk -F: '/Mount Point/{sub(/^ +/,"",$2); print $2}')
+  mount_point=""
+  for attempt in 1 2 3 4 5 6; do
+    if diskutil mount "$boot_device" >/dev/null 2>&1; then
+      mount_point=$(diskutil info "$boot_device" | awk -F: '/Mount Point/{sub(/^ +/,"",$2); print $2}')
+      [[ -d "$mount_point" ]] && break
+    fi
+    diskutil mountDisk "$device" >/dev/null 2>&1 || true
+    sleep 3
+  done
 else
   boot_device="${device}1"
-  mount_point=$(udisksctl mount -b "$boot_device" | sed -E 's/.* at (.*)\.$/\1/')
+  mount_point=""
+  for attempt in 1 2 3 4 5 6; do
+    mount_point=$(udisksctl mount -b "$boot_device" 2>/dev/null | sed -E 's/.* at (.*)\.$/\1/') || true
+    [[ -d "$mount_point" ]] && break
+    sleep 3
+  done
 fi
 [[ -d "$mount_point" ]] || { echo "Could not mount boot partition" >&2; exit 1; }
 umask 077

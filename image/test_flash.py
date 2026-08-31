@@ -199,6 +199,57 @@ class FlashTest(unittest.TestCase):
             config = (boot / "printwatch.env").read_text()
             self.assertIn('PRINTWATCH_PRINTER_ID="printer-3"', config)
 
+    def test_selects_device_from_connected_storage_list(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            image = root / "image.img.xz"
+            image.write_bytes(b"verified image")
+            Path(f"{image}.sha256").write_text(f"{hashlib.sha256(image.read_bytes()).hexdigest()}  {image}\n")
+            boot = root / "boot"
+            boot.mkdir()
+            tools = root / "bin"
+            tools.mkdir()
+            (tools / "rpi-imager").write_text("#!/bin/sh\nexit 0\n")
+            (tools / "diskutil").write_text(
+                "#!/bin/sh\n"
+                'if [ "$1" = list ]; then printf "/dev/disk9 (external, physical):\\n"; exit 0; fi\n'
+                'if [ "$2" = /dev/disk9 ]; then\n'
+                "  printf '   Device / Media Name: SD/MMC\\n'\n"
+                "  printf '   Disk Size: 31.9 GB (31914983424 bytes)\\n'\n"
+                "  printf '   Protocol: Secure Digital\\n'\n"
+                "  printf '   Internal: Yes\\n'\n"
+                "  printf '   Removable Media: Removable\\n'\n"
+                "  exit 0\n"
+                "fi\n"
+                'if [ "$2" = /dev/disk9s1 ]; then printf "Mount Point: %s\\n" "$PRINTWATCH_TEST_BOOT"; fi\n'
+                'if [ "$1" = mount ]; then exit 0; fi\n'
+                'if [ "$1" = mountDisk ]; then exit 0; fi\n'
+                'if [ "$1" = unmountDisk ]; then exit 0; fi\n'
+                'if [ "$1" = info ]; then exit 0; fi\n'
+                "exit 1\n"
+            )
+            for tool in tools.iterdir():
+                tool.chmod(0o755)
+            result = subprocess.run(
+                [FLASH, "printer-1", image],
+                input="1\n/dev/disk9\n",
+                text=True,
+                capture_output=True,
+                env={
+                    **os.environ,
+                    "PATH": f"{tools}:{os.environ['PATH']}",
+                    "PRINTWATCH_DEVICE_TOKEN": "a" * 24,
+                    "PRINTWATCH_TEST_BOOT": str(boot),
+                },
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("[1] /dev/disk9", result.stdout)
+            self.assertIn("SD/MMC", result.stdout)
+            self.assertIn("31.9 GB", result.stdout)
+            config = (boot / "printwatch.env").read_text()
+            self.assertIn('PRINTWATCH_PRINTER_ID="printer-1"', config)
+
     def test_rejects_short_wifi_psk_before_writer_runs(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
