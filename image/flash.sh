@@ -110,14 +110,18 @@ if [[ "$config_only" -eq 0 ]]; then
   rpi-imager --cli "$image" "$device"
 fi
 
+mount_point_from_info() {
+  diskutil info "$1" 2>/dev/null | awk -F: '/Mount Point/{sub(/^ +/,"",$2); print $2}'
+}
 if command -v diskutil >/dev/null; then
   boot_device="${device}s1"
   mount_point=""
   for attempt in 1 2 3 4 5 6; do
-    if diskutil mount "$boot_device" >/dev/null 2>&1; then
-      mount_point=$(diskutil info "$boot_device" | awk -F: '/Mount Point/{sub(/^ +/,"",$2); print $2}')
-      [[ -d "$mount_point" ]] && break
-    fi
+    mount_point=$(mount_point_from_info "$boot_device")
+    [[ -d "$mount_point" ]] && break
+    diskutil mount "$boot_device" >/dev/null 2>&1 || true
+    mount_point=$(mount_point_from_info "$boot_device")
+    [[ -d "$mount_point" ]] && break
     diskutil mountDisk "$device" >/dev/null 2>&1 || true
     sleep 3
   done
@@ -126,6 +130,8 @@ else
   mount_point=""
   for attempt in 1 2 3 4 5 6; do
     mount_point=$(udisksctl mount -b "$boot_device" 2>/dev/null | sed -E 's/.* at (.*)\.$/\1/') || true
+    [[ -d "$mount_point" ]] && break
+    mount_point=$(lsblk -nr -o MOUNTPOINT "$boot_device" 2>/dev/null | head -1)
     [[ -d "$mount_point" ]] && break
     sleep 3
   done
